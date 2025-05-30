@@ -37,9 +37,11 @@ html, body {
 
 #startButton,
 #startButtonImage {
-  position: relative;
-  margin-top: 22vh;   /* Move button much higher on the screen */
-  z-index: 2;
+  position: absolute; /* Use absolute positioning for precise placement */
+  left: 50%;
+  top: 60%; /* Position 60% from the top. Adjust (e.g., 55% for higher, 65% for lower) */
+  transform: translate(-50%, -50%); /* Center the button on the 60% line */
+  z-index: 2; /* Ensure it's above the title image */
   font-size: clamp(16px, 2.5vw, 28px);
   padding: 1vh 3vw;
   background: rgba(255,255,255,0.85);
@@ -50,13 +52,14 @@ html, body {
   width: auto;
   height: auto;
   box-sizing: border-box;
+  /* margin-top is no longer needed as top/left/transform handle positioning */
 }
 
 #startButtonImage {
-  background: none;
+  background: none; /* Specific styles for the image button if it loads */
   border: none;
   padding: 0;
-  margin-top: 65vh; /* Consistent margin */
+  /* It will inherit the position from the combined rule above, no separate margin-top needed */
 }
 
 #gameCanvas {
