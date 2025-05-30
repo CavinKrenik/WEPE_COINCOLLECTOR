@@ -1,24 +1,28 @@
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
+    // --- Get DOM Elements ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const titleScreenDiv = document.getElementById('titleScreen');
-    const titleImageEl = document.getElementById('titleImage'); // HTML element for Title.png
+    const titleImageEl = document.getElementById('titleImage');
     const startButton = document.getElementById('startButton');
-    const startButtonImageEl = document.getElementById('startButtonImage'); // HTML element for start.png
+    const startButtonImageEl = document.getElementById('startButtonImage');
     const scoreDisplay = document.getElementById('scoreDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const pauseMenu = document.getElementById('pauseMenu');
+    const resumeButton = document.getElementById('resumeButton');
+    const mainMenuButton = document.getElementById('mainMenuButton');
+    const pauseViewHighscoresButton = document.getElementById('pauseViewHighscoresButton');
+    const viewHighscoresButton = document.getElementById('viewHighscoresButton'); // For title screen
+    const touchControlsDiv = document.getElementById('touchControls');
 
     // --- Game Configuration ---
-    // These initial canvas.width/height will be overridden by resizeCanvas() on load
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = 800; // Default, will be resized
+    canvas.height = 600; // Default, will be resized
 
     let score = 0;
     let gameState = 'title'; // 'title', 'playing', 'paused', 'gameOver'
     let animationFrameId;
-    // let isPaused = false; // gameState 'paused' will handle this
-    const pauseMenu = document.getElementById('pauseMenu');
-    const resumeButton = document.getElementById('resumeButton');
-    const mainMenuButton = document.getElementById('mainMenuButton');
+    let highscoreEntered = false; // Flag to ensure highscore prompt appears only once per game end
 
     // --- Asset Loading ---
     const assets = {
@@ -31,7 +35,7 @@ window.addEventListener('load', function() {
             jumpRight: new Image(),
         },
         title: titleImageEl, // Reference to the <img> element in HTML
-        startButton: startButtonImageEl // Reference to the <img> element in HTML
+        // startButton: startButtonImageEl // This was a reference, but we primarily use startButtonImageEl directly
     };
 
     const assetSources = {
@@ -46,27 +50,43 @@ window.addEventListener('load', function() {
     };
 
     let assetsLoadedCount = 0;
-    const totalCoreAssetsToLoad = 8; 
+    const totalCoreAssetsToLoad = 8; // background, btc, 2x left, 2x right, jumpL, jumpR
 
     function coreAssetLoaded() {
         assetsLoadedCount++;
+        console.log(`Asset loaded. Count: ${assetsLoadedCount} / ${totalCoreAssetsToLoad}`);
+
         if (assetsLoadedCount === totalCoreAssetsToLoad) {
-            console.log("All core game assets (JS-loaded) are loaded.");
-            
-            if (assets.startButton.complete && assets.startButton.naturalHeight !== 0 && assets.startButton.src) {
-                startButton.style.display = 'none'; 
-                startButtonImageEl.style.display = 'block'; 
+            console.log("All core game assets (JS-loaded) are loaded. Setting up start button...");
+
+            startButton.removeEventListener('click', initGame);
+            startButtonImageEl.removeEventListener('click', initGame);
+
+            console.log("Start button image ('startButtonImageEl') details:", {
+                src: startButtonImageEl.src,
+                complete: startButtonImageEl.complete,
+                naturalWidth: startButtonImageEl.naturalWidth,
+                naturalHeight: startButtonImageEl.naturalHeight,
+                looksLoaded: startButtonImageEl.complete && startButtonImageEl.naturalHeight > 0 && startButtonImageEl.naturalWidth > 0
+            });
+
+            if (startButtonImageEl.src && startButtonImageEl.complete && startButtonImageEl.naturalHeight > 0 && startButtonImageEl.naturalWidth > 0) {
+                console.log("Attempting to use IMAGE start button (start.png).");
+                startButton.style.display = 'none';
+                startButtonImageEl.style.display = 'block';
                 startButtonImageEl.addEventListener('click', initGame);
             } else {
-                console.log("start.png image not loaded or has no dimensions, using text button.");
+                console.log("Attempting to use TEXT start button. 'start.png' image failed to load or has no dimensions.");
+                startButton.style.display = 'block';
+                startButtonImageEl.style.display = 'none';
                 startButton.addEventListener('click', initGame);
             }
-            // REMOVED: Lines that restricted titleImageEl size
-            // assets.title.style.maxWidth = canvas.width * 0.9 + 'px'; 
-            // assets.title.style.maxHeight = canvas.height * 0.7 + 'px'; 
+        } else if (assetsLoadedCount > totalCoreAssetsToLoad) {
+            console.warn("assetsLoadedCount has exceeded totalCoreAssetsToLoad. Check asset loading logic.");
         }
     }
 
+    // Assign onload handlers for JS-loaded assets
     assets.background.onload = coreAssetLoaded;
     assets.btc.onload = coreAssetLoaded;
     assets.player.left[0].onload = coreAssetLoaded;
@@ -76,6 +96,7 @@ window.addEventListener('load', function() {
     assets.player.jumpLeft.onload = coreAssetLoaded;
     assets.player.jumpRight.onload = coreAssetLoaded;
 
+    // Set sources for JS-loaded assets
     assets.background.src = assetSources.background;
     assets.btc.src = assetSources.btc;
     assets.player.left[0].src = assetSources.playerLeft1;
@@ -84,28 +105,28 @@ window.addEventListener('load', function() {
     assets.player.right[1].src = assetSources.playerRight2;
     assets.player.jumpLeft.src = assetSources.playerJumpLeft;
     assets.player.jumpRight.src = assetSources.playerJumpRight;
-    
-    const playerBaseWidth = 80; // Original reference width
-    const playerBaseHeight = 100; // Original reference height
-    const playerAspectRatio = playerBaseWidth / playerBaseHeight;
 
     // --- Player Object ---
+    const playerBaseWidth = 80;
+    const playerBaseHeight = 100;
+    const playerAspectRatio = playerBaseWidth / playerBaseHeight;
+
     const player = {
-        width: playerBaseWidth, 
+        width: playerBaseWidth,
         height: playerBaseHeight,
         x: canvas.width / 2 - playerBaseWidth / 2,
-        y: canvas.height - playerBaseHeight - (canvas.height * 0.12), // Adjusted groundY
-        speed: 5, // Base speed, consider scaling with canvas size if needed
-        dx: 0, 
-        dy: 0, 
-        gravity: 0.8, // Base gravity
-        jumpPower: -15, // Base jump power
+        y: canvas.height - playerBaseHeight - (canvas.height * 0.12),
+        speed: 5,
+        dx: 0,
+        dy: 0,
+        gravity: 0.8,
+        jumpPower: -15,
         isJumping: false,
-        groundY: canvas.height - playerBaseHeight - (canvas.height * 0.12), // Initial groundY
+        groundY: canvas.height - playerBaseHeight - (canvas.height * 0.12),
         currentFrame: 0,
         animationTimer: 0,
-        animationSpeed: 8, 
-        direction: 'right', 
+        animationSpeed: 8,
+        direction: 'right',
         images: assets.player,
 
         draw() {
@@ -113,15 +134,16 @@ window.addEventListener('load', function() {
             if (this.isJumping) {
                 currentImage = this.direction === 'left' ? this.images.jumpLeft : this.images.jumpRight;
             } else {
-                if (this.dx !== 0) { 
+                if (this.dx !== 0) {
                     currentImage = this.direction === 'left' ? this.images.left[this.currentFrame] : this.images.right[this.currentFrame];
-                } else { 
+                } else {
                     currentImage = this.direction === 'left' ? this.images.left[0] : this.images.right[0];
                 }
             }
             if (currentImage && currentImage.complete && currentImage.naturalHeight !== 0) {
-                 ctx.drawImage(currentImage, this.x, this.y, this.width, this.height);
-            } else { 
+                ctx.drawImage(currentImage, this.x, this.y, this.width, this.height);
+            } else {
+                // Fallback drawing if image isn't ready
                 ctx.fillStyle = 'green';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
@@ -129,26 +151,28 @@ window.addEventListener('load', function() {
         update() {
             this.x += this.dx;
 
+            // Animation
             if (this.dx !== 0 && !this.isJumping) {
                 this.animationTimer++;
                 if (this.animationTimer % this.animationSpeed === 0) {
-                    this.currentFrame = (this.currentFrame + 1) % this.images.left.length; 
+                    this.currentFrame = (this.currentFrame + 1) % this.images.left.length;
                 }
-            } else if (this.dx === 0 && !this.isJumping) { 
-                this.currentFrame = 0; 
+            } else if (this.dx === 0 && !this.isJumping) {
+                this.currentFrame = 0;
             }
 
+            // Jumping and Gravity
             if (this.isJumping) {
                 this.dy += this.gravity;
                 this.y += this.dy;
-                if (this.y >= this.groundY) { 
+                if (this.y >= this.groundY) {
                     this.y = this.groundY;
                     this.isJumping = false;
                     this.dy = 0;
                 }
             }
 
-            // Screen wrapping logic
+            // Screen wrapping
             if (this.x + this.width < 0) {
                 this.x = canvas.width;
             } else if (this.x > canvas.width) {
@@ -156,37 +180,37 @@ window.addEventListener('load', function() {
             }
         },
         jump() {
-            if (!this.isJumping && gameState === 'playing') { // Ensure game is playing
+            if (!this.isJumping && gameState === 'playing') {
                 this.isJumping = true;
                 this.dy = this.jumpPower;
             }
         }
     };
 
-    let originalSpeed = player.speed; // Store base speed
+    let originalSpeed = player.speed;
     let speedBoostTimeout = null;
 
     // --- Money Object ---
     const moneyItems = [];
     const moneyProps = {
-        baseWidth: 40, // Original reference width
-        width: 40,  
-        height: 40, 
-        speed: 3, // Base speed
-        spawnInterval: 90, 
+        baseWidth: 40,
+        width: 40,
+        height: 40,
+        speed: 3,
+        spawnInterval: 90, // Frames
         spawnTimer: 0
     };
 
     function createMoney() {
         const x = Math.random() * (canvas.width - moneyProps.width);
-        const y = -moneyProps.height; 
+        const y = -moneyProps.height;
         moneyItems.push({ x, y, width: moneyProps.width, height: moneyProps.height });
     }
 
     function updateMoney() {
         moneyProps.spawnTimer++;
-        if (moneyProps.spawnTimer >= moneyProps.spawnInterval) { 
-            moneyProps.spawnTimer = 0; 
+        if (moneyProps.spawnTimer >= moneyProps.spawnInterval) {
+            moneyProps.spawnTimer = 0;
             createMoney();
         }
 
@@ -194,6 +218,7 @@ window.addEventListener('load', function() {
             const money = moneyItems[i];
             money.y += moneyProps.speed;
 
+            // Collision detection with player
             if (
                 money.x < player.x + player.width &&
                 money.x + money.width > player.x &&
@@ -204,20 +229,21 @@ window.addEventListener('load', function() {
                 score++;
                 scoreDisplay.textContent = `Score: ${score}`;
 
-                if (score > 0 && score % 5 === 0) { // Ensure score > 0 for first boost
+                // Speed boost logic
+                if (score > 0 && score % 5 === 0) {
                     if (speedBoostTimeout !== null) {
                         clearTimeout(speedBoostTimeout);
                     }
-                    // player.speed = originalSpeed * 1.5; // Boost based on current originalSpeed
-                    player.speed = player.speed * 1.3 > originalSpeed * 2 ? originalSpeed * 2 : player.speed * 1.3; // Cumulative but capped
+                    player.speed = player.speed * 1.3 > originalSpeed * 2 ? originalSpeed * 2 : player.speed * 1.3;
                     console.log("Speed Boost!", player.speed);
                     speedBoostTimeout = setTimeout(() => {
-                        player.speed = originalSpeed; // Reset to the very base speed
+                        player.speed = originalSpeed;
                         speedBoostTimeout = null;
                         console.log("Speed normal.", player.speed);
                     }, 3000); // 3 second boost
                 }
             }
+            // Remove money if it goes off screen
             else if (money.y > canvas.height) {
                 moneyItems.splice(i, 1);
             }
@@ -229,12 +255,14 @@ window.addEventListener('load', function() {
             if (assets.btc && assets.btc.complete && assets.btc.naturalHeight !== 0) {
                 ctx.drawImage(assets.btc, money.x, money.y, money.width, money.height);
             } else {
-                ctx.fillStyle = 'gold'; 
+                // Fallback drawing
+                ctx.fillStyle = 'gold';
                 ctx.fillRect(money.x, money.y, money.width, money.height);
             }
         });
     }
 
+    // --- Input Handling ---
     const keys = { ArrowLeft: false, ArrowRight: false, Space: false };
 
     function handleKeyDown(e) {
@@ -246,20 +274,20 @@ window.addEventListener('load', function() {
             }
             return;
         }
-        if (gameState !== 'playing' && gameState !== 'title') return; // Allow space/enter on title for start
 
         if (gameState === 'playing') {
             if (e.code === "ArrowLeft") keys.ArrowLeft = true;
             if (e.code === "ArrowRight") keys.ArrowRight = true;
             if (e.code === "Space") {
-                keys.Space = true; // Set key state
-                player.jump(); // Call jump action
+                keys.Space = true;
+                player.jump();
             }
-             if (e.code === "Space" || e.code.startsWith("Arrow")) {
-                e.preventDefault();
+            if (e.code === "Space" || e.code.startsWith("Arrow")) {
+                e.preventDefault(); // Prevent page scrolling
             }
         } else if (gameState === 'title' && (e.code === "Enter" || e.code === "Space")) {
-            initGame(); // Start game with Enter/Space from title
+            initGame();
+            e.preventDefault();
         }
     }
 
@@ -272,8 +300,8 @@ window.addEventListener('load', function() {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
 
-    function processInputForMovement() { 
-        player.dx = 0; 
+    function processInputForMovement() {
+        player.dx = 0;
         if (keys.ArrowLeft) {
             player.dx = -player.speed;
             player.direction = 'left';
@@ -284,15 +312,17 @@ window.addEventListener('load', function() {
         }
     }
 
+    // --- Game Loop ---
     function gameLoop() {
-        if (gameState !== 'playing') return; // Only run loop if playing
+        if (gameState !== 'playing') return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (assets.background && assets.background.complete && assets.background.naturalHeight !==0) {
+        // Draw background
+        if (assets.background && assets.background.complete && assets.background.naturalHeight !== 0) {
             ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
         } else {
-            ctx.fillStyle = '#87CEEB'; 
+            ctx.fillStyle = '#87CEEB'; // Fallback background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -306,11 +336,15 @@ window.addEventListener('load', function() {
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // --- Game State Management ---
     function pauseGame() {
         if (gameState === 'playing') {
             gameState = 'paused';
-            pauseMenu.style.display = 'flex'; // CSS handles flex centering
-            // cancelAnimationFrame(animationFrameId); // Game loop already checks gameState
+            pauseMenu.style.display = 'flex';
+            if (timerInterval) { // Pause the timer logic by not decrementing
+                // The interval itself keeps running but startTimer's callback checks gameState
+            }
+            console.log("Game paused. gameState:", gameState);
         }
     }
 
@@ -318,63 +352,82 @@ window.addEventListener('load', function() {
         if (gameState === 'paused') {
             gameState = 'playing';
             pauseMenu.style.display = 'none';
-            animationFrameId = requestAnimationFrame(gameLoop); // Restart loop
+            // Timer will resume decrementing as gameState is 'playing'
+            animationFrameId = requestAnimationFrame(gameLoop); // Restart game loop
+            console.log("Game resumed. gameState:", gameState);
         }
     }
 
     function goToMainMenu() {
-        if (speedBoostTimeout) { // Clear any active speed boost
+        console.log("goToMainMenu called");
+        if (speedBoostTimeout) {
             clearTimeout(speedBoostTimeout);
             player.speed = originalSpeed;
             speedBoostTimeout = null;
         }
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
         pauseMenu.style.display = 'none';
         canvas.style.display = 'none';
         scoreDisplay.style.display = 'none';
-        titleScreenDiv.style.display = 'flex'; // CSS handles flex centering for title screen
+        timerDisplay.style.display = 'none';
+        touchControlsDiv.style.display = 'flex'; // Show for title if applicable, CSS might hide for desktop
+        titleScreenDiv.style.display = 'flex';
+        if (viewHighscoresButton) viewHighscoresButton.style.display = 'block'; // Show title screen high score button
+
         gameState = 'title';
+        console.log("gameState changed to 'title'");
     }
 
-    resumeButton.addEventListener('click', resumeGame);
-    mainMenuButton.addEventListener('click', goToMainMenu);
-
     function initGame() {
-        if (assetsLoadedCount < totalCoreAssetsToLoad && !assets.background.complete) { // Check background explicitly
+        console.log("initGame function has been CALLED.");
+        highscoreEntered = false; // Reset for this game session
+
+        if (assetsLoadedCount < totalCoreAssetsToLoad && !assets.background.complete) {
             console.warn("Assets not fully loaded yet. Game start might be premature.");
-            // Optionally, could add a loading screen or delay
+            // Optionally, could add a loading screen or delay here
         }
 
         titleScreenDiv.style.display = 'none';
+        if (viewHighscoresButton) viewHighscoresButton.style.display = 'none'; // Hide title screen high score button
         canvas.style.display = 'block';
         scoreDisplay.style.display = 'block';
+        timerDisplay.style.display = 'block';
         pauseMenu.style.display = 'none';
-
-        document.getElementById('timerDisplay').style.display = 'block'; // <-- Add here
+        touchControlsDiv.style.display = 'flex'; // Show touch controls
 
         score = 0;
         scoreDisplay.textContent = `Score: ${score}`;
-        
-        // Reset player state using scaled values
+
         scaleGameObjects(); // Recalculate sizes and groundY first
         player.x = canvas.width / 2 - player.width / 2;
-        player.y = player.groundY; // Place on the recalculated ground
+        player.y = player.groundY;
         player.isJumping = false;
         player.dy = 0;
+        player.dx = 0; // Ensure player is stationary at start
         player.direction = 'right';
-        player.currentFrame = 0; 
-        player.speed = originalSpeed; // Reset to base speed
+        player.currentFrame = 0;
+        player.speed = originalSpeed;
 
-        moneyItems.length = 0; 
+        moneyItems.length = 0;
         moneyProps.spawnTimer = 0;
-        
-        if (speedBoostTimeout) { // Clear any lingering boost from previous game
+
+        if (speedBoostTimeout) {
             clearTimeout(speedBoostTimeout);
             speedBoostTimeout = null;
         }
-        
-        gameState = 'playing';
 
-        startTimer(); // Start the timer when the game initializes
+        gameState = 'playing';
+        console.log("gameState changed to 'playing'");
+
+        startTimer();
 
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -382,104 +435,96 @@ window.addEventListener('load', function() {
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    // REMOVED: Lines that restricted titleScreenDiv and gameContainer size
-    // titleScreenDiv.style.width = canvas.width + 'px';
-    // titleScreenDiv.style.height = canvas.height + 'px';
-    // document.getElementById('gameContainer').style.width = canvas.width + 'px';
-    // document.getElementById('gameContainer').style.height = canvas.height + 'px';
+    // Event listeners for pause menu buttons
+    resumeButton.addEventListener('click', resumeGame);
+    mainMenuButton.addEventListener('click', goToMainMenu);
+    if (pauseViewHighscoresButton) {
+        pauseViewHighscoresButton.addEventListener('click', () => {
+            console.log("Pause menu 'View High Scores' clicked.");
+            showHighscores(false); // false means don't ask to play again
+        });
+    }
+    // Event listener for title screen high score button
+    if (viewHighscoresButton) {
+        viewHighscoresButton.addEventListener('click', () => {
+            console.log("Title screen 'View High Scores' clicked.");
+            showHighscores(false);
+        });
+    }
 
+
+    // --- Touch Controls ---
     const leftBtn = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
     const jumpBtn = document.getElementById('jumpBtn');
 
-    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = true; });
-    leftBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = false; });
-    leftBtn.addEventListener('mousedown', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = true; }); // For desktop testing
-    leftBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = false; }); // For desktop testing
+    // Add touch event listeners (ensure these are robust for your needs)
+    // Example for left button:
+    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = true; });
+    leftBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = false; });
+    leftBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = true; }); // For desktop testing
+    leftBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = false; });
+
+    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = true; });
+    rightBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = false; });
+    rightBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = true; });
+    rightBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = false; });
+
+    jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') { keys.Space = true; player.jump(); } });
+    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.Space = false; });
+    jumpBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') { keys.Space = true; player.jump(); } });
+    jumpBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.Space = false; });
 
 
-    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = true; });
-    rightBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = false; });
-    rightBtn.addEventListener('mousedown', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = true; }); // For desktop testing
-    rightBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = false; }); // For desktop testing
-
-    jumpBtn.addEventListener('touchstart', e => { 
-        e.preventDefault(); 
-        if(gameState === 'playing') {
-            keys.Space = true; 
-            player.jump();
-        }
-    });
-    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.Space = false; });
-    jumpBtn.addEventListener('mousedown', e => { // For desktop testing
-        e.preventDefault(); 
-        if(gameState === 'playing') {
-            keys.Space = true; 
-            player.jump();
-        }
-    });
-    jumpBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.Space = false; });
-
-
+    // --- Scaling and Resizing ---
     function scaleGameObjects() {
-        const gameAreaBottomMargin = canvas.height * 0.13; // Reserve 13% for controls + buffer
+        const gameAreaBottomMargin = canvas.height * 0.13;
 
-        // Player scaling
-        player.height = Math.max(40, canvas.height * 0.12); 
-        player.width = player.height * playerAspectRatio; 
-        player.groundY = canvas.height - player.height - gameAreaBottomMargin; 
-        
-        // If player somehow ends up below ground after resize (e.g. if height increased a lot)
+        player.height = Math.max(40, canvas.height * 0.12);
+        player.width = player.height * playerAspectRatio;
+        player.groundY = canvas.height - player.height - gameAreaBottomMargin;
+
         if (player.y + player.height > canvas.height - gameAreaBottomMargin || player.y > player.groundY) {
-             player.y = player.groundY;
+            player.y = player.groundY;
         }
 
-
-        // Money scaling
-        moneyProps.width = Math.max(20, canvas.width * 0.04); 
-        moneyProps.height = moneyProps.width; 
-
-        // Potentially scale speeds and forces if desired for consistency across resolutions
-        // Example: (not fully implemented here, would need more adjustment)
-        // const scaleFactor = canvas.width / 800; // Compare to original design width
-        // player.speed = originalSpeed * scaleFactor;
-        // moneyProps.speed = originalMoneySpeed * scaleFactor;
-        // player.jumpPower = originalJumpPower * scaleFactor;
-        // player.gravity = originalGravity * scaleFactor;
+        moneyProps.width = Math.max(20, canvas.width * 0.04);
+        moneyProps.height = moneyProps.width;
     }
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        
-        // Initial groundY based on new canvas height, player height might still be old value here
-        // player.groundY = canvas.height - player.height - (canvas.height * 0.12); 
-        // if (player.y > player.groundY) player.y = player.groundY;
-
-        scaleGameObjects(); // This will correctly set player height and then groundY
-
-        // If game is playing, re-center player or adjust position if needed
-        if (gameState === 'playing' && (player.x > canvas.width - player.width || player.x < 0)) {
-             // player.x = canvas.width / 2 - player.width / 2; // Option: re-center
+        scaleGameObjects();
+        // If game is playing and player is off screen due to resize, you might want to reposition
+        if (gameState === 'playing') {
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            if (player.x < 0) player.x = 0;
+            if (player.y > player.groundY) player.y = player.groundY; // Ensure on ground
         }
-        // No need to redraw here, game loop will handle it
+        // No explicit redraw needed here as gameLoop handles it if active, or title screen is static
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Initial call to set correct sizes
 
+    // --- Timer ---
     let timer = 120; // seconds
     let timerInterval = null;
-    let highscores = JSON.parse(localStorage.getItem('highscores')) || [];
 
     function startTimer() {
-        timer = 120;
+        console.log("startTimer called");
+        timer = 120; // Reset timer duration
         updateTimerDisplay();
+        if (timerInterval) {
+            clearInterval(timerInterval); // Clear existing interval
+        }
         timerInterval = setInterval(() => {
+            if (gameState !== 'playing') { // Only decrement if game is actively playing
+                return;
+            }
             timer--;
             updateTimerDisplay();
             if (timer <= 0) {
-                clearInterval(timerInterval);
-                endGame();
+                endGame(); // No need to clear interval here, endGame will do it
             }
         }, 1000);
     }
@@ -487,53 +532,100 @@ window.addEventListener('load', function() {
     function updateTimerDisplay() {
         const min = Math.floor(timer / 60);
         const sec = timer % 60;
-        document.getElementById('timerDisplay').textContent = `Time: ${min}:${sec.toString().padStart(2, '0')}`;
+        timerDisplay.textContent = `Time: ${min}:${sec.toString().padStart(2, '0')}`;
     }
-    if (timerInterval) clearInterval(timerInterval);
-    startTimer();
+
+    // --- High Scores & Game End ---
+    let highscores = JSON.parse(localStorage.getItem('highscores')) || [];
 
     function endGame() {
+        console.log("endGame called. Current score:", score);
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        if (gameState === 'gameover') { // Prevent multiple executions
+            console.log("endGame called but already in gameover state.");
+            return;
+        }
         gameState = 'gameover';
+        console.log("gameState changed to 'gameover'");
+
+
         canvas.style.display = 'none';
         scoreDisplay.style.display = 'none';
-        document.getElementById('timerDisplay').style.display = 'none';
+        timerDisplay.style.display = 'none';
+        touchControlsDiv.style.display = 'none';
 
         if (!highscoreEntered) {
-            // Check for highscore
-            let place = highscores.findIndex(hs => score > hs.score);
-            if (place === -1 && highscores.length < 3) place = highscores.length;
-            if (place !== -1) {
-                let initials = prompt("NEW HIGH SCORE! Enter your initials (3 letters):", "");
-                initials = (initials || "???").substring(0,3).toUpperCase();
-                highscores.splice(place, 0, { initials, score });
-                highscores = highscores.slice(0, 3); // Keep top 3
-                localStorage.setItem('highscores', JSON.stringify(highscores));
+            let currentHighscores = JSON.parse(localStorage.getItem('highscores')) || []; // Get latest scores
+            let place = -1;
+            for (let i = 0; i < currentHighscores.length; i++) {
+                if (score > currentHighscores[i].score) {
+                    place = i;
+                    break;
+                }
             }
-            highscoreEntered = true;
+            if (place === -1 && currentHighscores.length < 3) {
+                place = currentHighscores.length;
+            }
+
+
+            if (place !== -1) { // Qualifies for highscore list
+                let initials = prompt(`NEW HIGH SCORE: ${score}!\nEnter your initials (3 letters):`, "");
+                if (initials !== null) { // User didn't cancel prompt
+                    initials = initials.substring(0, 3).toUpperCase() || "???";
+                    currentHighscores.splice(place, 0, { initials, score });
+                    highscores = currentHighscores.slice(0, 3); // Keep top 3, assign to global highscores
+                    localStorage.setItem('highscores', JSON.stringify(highscores));
+                    console.log("New highscore saved:", highscores);
+                } else {
+                    console.log("Highscore entry cancelled by user.");
+                }
+            } else {
+                console.log("Score did not qualify for highscores or list is full.");
+            }
+            highscoreEntered = true; // Mark that highscore process has happened
+        } else {
+            console.log("Highscore entry already processed for this game session.");
         }
-        showHighscores(true); // Pass true to show "Try Again" prompt
+        showHighscores(true); // Ask to play again
     }
 
     function showHighscores(askRetry = false) {
-        let msg = "HIGHSCORES:\n";
-        highscores.forEach((hs, i) => {
-            msg += `${i+1}. ${hs.initials} - ${hs.score}\n`;
-        });
+        console.log("showHighscores called. askRetry:", askRetry);
+        let currentHighscores = JSON.parse(localStorage.getItem('highscores')) || [];
+        let msg = "HIGH SCORES:\n";
+        if (currentHighscores.length === 0) {
+            msg += "No scores yet!\n";
+        } else {
+            currentHighscores.forEach((hs, i) => {
+                msg += `${i + 1}. ${hs.initials} - ${hs.score}\n`;
+            });
+        }
+
         if (askRetry) {
             msg += "\nPlay again?";
             if (confirm(msg)) {
-                highscoreEntered = false; // Reset for next game
+                console.log("'Play again' confirmed.");
+                // highscoreEntered = false; // This is reset in initGame()
                 initGame();
             } else {
-                location.reload();
+                console.log("'Play again' declined.");
+                goToMainMenu();
             }
         } else {
             alert(msg);
         }
     }
 
-    let highscoreEntered = false; // Add at the top with your other globals
-
-    const viewHighscoresButton = document.getElementById('viewHighscoresButton');
-    viewHighscoresButton.addEventListener('click', () => showHighscores());
+    // --- Initial Setup ---
+    console.log("Setting up initial game view.");
+    resizeCanvas(); // Set initial canvas size
+    goToMainMenu(); // Start on the title screen
 });

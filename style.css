@@ -16,11 +16,11 @@ html, body {
 }
 
 #titleScreen {
-  position: relative; /* Changed from absolute to allow normal flow or specific positioning if #gameContainer wasn't fixed */
+  position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  display: flex; /* Added to help center content if needed, works with current setup */
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -32,52 +32,54 @@ html, body {
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  z-index: 1; /* Ensure it's behind buttons if titleScreen is flex and buttons are direct children */
+  z-index: 1;
 }
 
 #startButton,
 #startButtonImage {
-  position: absolute; /* Use absolute positioning for precise placement */
+  position: absolute; 
   left: 50%;
-  top: 60%; /* Position 60% from the top. Adjust (e.g., 55% for higher, 65% for lower) */
-  transform: translate(-50%, -50%); /* Center the button on the 60% line */
-  z-index: 2; /* Ensure it's above the title image */
-  font-size: clamp(16px, 2.5vw, 28px);
-  padding: 1vh 3vw;
+  top: 60%; 
+  transform: translate(-50%, -50%); 
+  z-index: 2; 
+  /* Adjusted for roughly half size */
+  font-size: clamp(12px, 1.5vw, 20px); /* Reduced font size */
+  padding: 0.5vh 1.5vw;                /* Reduced padding */
   background: rgba(255,255,255,0.85);
-  border: 2px solid #888;
-  border-radius: 1vh;
+  border: 1px solid #888; /* Slightly thinner border */
+  border-radius: 0.5vh;   /* Slightly smaller radius */
   cursor: pointer;
-  max-width: 40vw;
+  max-width: 20vw; /* Reduced max-width */
   width: auto;
   height: auto;
   box-sizing: border-box;
-  /* margin-top is no longer needed as top/left/transform handle positioning */
 }
 
 #startButtonImage {
-  background: none; /* Specific styles for the image button if it loads */
+  background: none; 
   border: none;
   padding: 0;
-  /* It will inherit the position from the combined rule above, no separate margin-top needed */
+  /* Ensure image scales with max-width */
+  display: block; /* ensure it behaves as a block for sizing */
+  max-height: 10vh; /* Optional: constrain height directly if needed */
 }
 
 #gameCanvas {
-  display: none; /* JS will change to block */
-  width: 100vw;  /* Ensure it takes full viewport width */
-  height: 100vh; /* Ensure it takes full viewport height */
-  max-width: 100vw; /* Redundant if width is 100vw but harmless */
-  max-height: 100vh; /* Redundant if height is 100vh but harmless */
+  display: none; 
+  width: 100vw;  
+  height: 100vh; 
+  max-width: 100vw; 
+  max-height: 100vh;
 }
 
 #scoreDisplay {
   position: absolute;
-  top: 1.5vh; /* Slightly more space from top */
-  left: 2vw;  /* Slightly more space from left */
-  font-size: clamp(14px, 2.5vw, 22px); /* Responsive font size */
+  top: 1.5vh; 
+  left: 2vw;  
+  font-size: clamp(14px, 2.5vw, 22px); 
   color: #fff;
-  text-shadow: 1px 1px 1px rgba(0,0,0,0.6), -1px -1px 1px rgba(0,0,0,0.6); /* Improved text shadow */
-  z-index: 5; /* Ensure it's above canvas */
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.6), -1px -1px 1px rgba(0,0,0,0.6); 
+  z-index: 5; 
 }
 
 #timerDisplay {
@@ -91,20 +93,20 @@ html, body {
 }
 
 #pauseMenu {
-  display: none; /* JS handles display */
+  display: none; 
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.75); /* Slightly darker */
+  background: rgba(0, 0, 0, 0.75); 
   color: white;
   z-index: 10;
-  display: flex; /* Use flex for centering */
+  display: flex; 
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: clamp(18px, 3vw, 30px); /* Responsive font size */
+  font-size: clamp(18px, 3vw, 30px); 
 }
 
 #pauseMenu div {
@@ -112,11 +114,12 @@ html, body {
     font-weight: bold;
 }
 
+/* This rule will apply to ALL buttons in the pauseMenu, including the new one */
 #pauseMenu button {
-    font-size: clamp(16px, 2.5vw, 26px); /* Responsive font size for buttons */
+    font-size: clamp(16px, 2.5vw, 26px); 
     padding: 1.5vh 4vw;
     margin: 1vh 0;
-    min-width: 40vw;
+    min-width: 45vw; /* Adjusted min-width to make buttons a bit wider */
     background-color: #eee;
     color: #333;
     border: 1px solid #ccc;
@@ -130,32 +133,32 @@ html, body {
 
 #touchControls {
   position: fixed;
-  bottom: 1.5vh; /* Adjusted bottom */
+  bottom: 1.5vh; 
   left: 0;
   width: 100vw;
   display: flex;
-  justify-content: space-around; /* Better spacing */
-  align-items: center; /* Vertically align items if they have different heights */
-  gap: 1vw; /* Adjusted gap */
+  justify-content: space-around; 
+  align-items: center; 
+  gap: 1vw; 
   z-index: 20;
-  pointer-events: none; /* Allow only buttons to be clickable */
+  pointer-events: none; 
 }
 
 #touchControls button {
   pointer-events: auto;
-  font-size: clamp(24px, 7vw, 40px); /* Larger, clearer icons/text, adjust min/max as needed */
-  padding: 1.5vh 2.5vw; /* Adjusted padding */
-  background: rgba(255,255,255,0.6); /* Slightly more transparent */
-  border: 1px solid rgba(200,200,200,0.8); /* Softer border */
-  border-radius: 2vh; /* Adjusted radius */
+  font-size: clamp(24px, 7vw, 40px); 
+  padding: 1.5vh 2.5vw; 
+  background: rgba(255,255,255,0.6); 
+  border: 1px solid rgba(200,200,200,0.8); 
+  border-radius: 2vh; 
   cursor: pointer;
   user-select: none;
-  line-height: 1; /* Helps with vertical alignment of text/icons */
-  min-width: 18vw; /* Ensure buttons have a decent tap area */
+  line-height: 1; 
+  min-width: 18vw; 
   text-align: center;
 }
 
-@media (min-width: 800px) { /* Hides touch controls on larger screens (desktops) */
+@media (min-width: 800px) { 
   #touchControls {
      display: none;
   }
