@@ -16,14 +16,9 @@ html, body {
 }
 
 #titleScreen {
-  position: relative; /* Changed from absolute to allow normal flow or specific positioning if #gameContainer wasn't fixed */
+  position: relative;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
-  display: flex; /* Added to help center content if needed, works with current setup */
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
 }
 
 #titleImage {
@@ -37,12 +32,10 @@ html, body {
 
 #startButton,
 #startButtonImage {
-  position: relative; /* Changed from absolute to flow better if titleScreen is flex */
-  /* Centering will be handled by titleScreen's flex properties */
-  /* left: 50%; */
-  /* top: 70%; */ /* Adjust as needed */
-  /* transform: translate(-50%, -50%); */
-  margin-top: 65vh; /* Pushes button down, adjust this value */
+  position: absolute;
+  left: 50%;
+  top: 65%; /* Lower value moves it higher, e.g., 55% */
+  transform: translate(-50%, -50%);
   z-index: 2;
   font-size: clamp(16px, 2.5vw, 28px); /* Responsive font size */
   padding: 1vh 3vw; /* Responsive padding */
