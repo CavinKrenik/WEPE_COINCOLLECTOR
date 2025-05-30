@@ -8,13 +8,14 @@ window.addEventListener('load', function() {
     const scoreDisplay = document.getElementById('scoreDisplay');
 
     // --- Game Configuration ---
+    // These initial canvas.width/height will be overridden by resizeCanvas() on load
     canvas.width = 800;
     canvas.height = 600;
 
     let score = 0;
-    let gameState = 'title'; // 'title', 'playing', 'gameOver'
+    let gameState = 'title'; // 'title', 'playing', 'paused', 'gameOver'
     let animationFrameId;
-    let isPaused = false;
+    // let isPaused = false; // gameState 'paused' will handle this
     const pauseMenu = document.getElementById('pauseMenu');
     const resumeButton = document.getElementById('resumeButton');
     const mainMenuButton = document.getElementById('mainMenuButton');
@@ -33,7 +34,6 @@ window.addEventListener('load', function() {
         startButton: startButtonImageEl // Reference to the <img> element in HTML
     };
 
-    // Updated asset sources to .png
     const assetSources = {
         background: 'background.png',
         btc: 'btc.png',
@@ -43,33 +43,29 @@ window.addEventListener('load', function() {
         playerRight2: 'right1.png',
         playerJumpLeft: 'jumpleft.png',
         playerJumpRight: 'jumpright.png',
-        // Title.png and start.png src are set in the HTML
     };
 
     let assetsLoadedCount = 0;
-    // background, btc, playerLeft1, playerLeft2, playerRight1, playerRight2, playerJumpLeft, playerJumpRight
     const totalCoreAssetsToLoad = 8; 
 
-function coreAssetLoaded() {
-    assetsLoadedCount++;
-    if (assetsLoadedCount === totalCoreAssetsToLoad) {
-        console.log("All core game assets (JS-loaded) are loaded.");
-        // Now check the HTML-loaded start button image
-        // The title image (assets.title) is handled by the browser directly for its <img> tag.
-
-        if (assets.startButton.complete && assets.startButton.naturalHeight !== 0) {
-            startButton.style.display = 'none'; // Hide text button
-            startButtonImageEl.style.display = 'block'; // Show image button
-            startButtonImageEl.addEventListener('click', initGame);
-        } else {
-            console.log("start.png image not loaded or has no dimensions, using text button.");
-            startButton.addEventListener('click', initGame);
+    function coreAssetLoaded() {
+        assetsLoadedCount++;
+        if (assetsLoadedCount === totalCoreAssetsToLoad) {
+            console.log("All core game assets (JS-loaded) are loaded.");
+            
+            if (assets.startButton.complete && assets.startButton.naturalHeight !== 0 && assets.startButton.src) {
+                startButton.style.display = 'none'; 
+                startButtonImageEl.style.display = 'block'; 
+                startButtonImageEl.addEventListener('click', initGame);
+            } else {
+                console.log("start.png image not loaded or has no dimensions, using text button.");
+                startButton.addEventListener('click', initGame);
+            }
+            // REMOVED: Lines that restricted titleImageEl size
+            // assets.title.style.maxWidth = canvas.width * 0.9 + 'px'; 
+            // assets.title.style.maxHeight = canvas.height * 0.7 + 'px'; 
         }
-        // Ensure title image is also scaled after it might have loaded
-        // assets.title.style.maxWidth = canvas.width * 0.9 + 'px'; // REMOVE OR COMMENT OUT THIS LINE
-        // assets.title.style.maxHeight = canvas.height * 0.7 + 'px'; // REMOVE OR COMMENT OUT THIS LINE
     }
-}
 
     assets.background.onload = coreAssetLoaded;
     assets.btc.onload = coreAssetLoaded;
@@ -80,7 +76,6 @@ function coreAssetLoaded() {
     assets.player.jumpLeft.onload = coreAssetLoaded;
     assets.player.jumpRight.onload = coreAssetLoaded;
 
-
     assets.background.src = assetSources.background;
     assets.btc.src = assetSources.btc;
     assets.player.left[0].src = assetSources.playerLeft1;
@@ -90,29 +85,27 @@ function coreAssetLoaded() {
     assets.player.jumpLeft.src = assetSources.playerJumpLeft;
     assets.player.jumpRight.src = assetSources.playerJumpRight;
     
-    // The src for assets.title (Title.png) and assets.startButton (start.png)
-    // are already set in the HTML. We just need to ensure they are handled.
-    // We can add an onload for startButtonImageEl if needed for precise control,
-    // but checking .complete and .naturalHeight in coreAssetLoaded is usually sufficient.
-
+    const playerBaseWidth = 80; // Original reference width
+    const playerBaseHeight = 100; // Original reference height
+    const playerAspectRatio = playerBaseWidth / playerBaseHeight;
 
     // --- Player Object ---
     const player = {
-        width: 80,  // IMPORTANT: Adjust based on your character image aspect ratio & desired size
-        height: 100, // IMPORTANT: Adjust based on your character image aspect ratio & desired size
-        x: canvas.width / 2 - 40,
-        y: canvas.height - 110, // Start on ground
-        speed: 5,
-        dx: 0, // Velocity x
-        dy: 0, // Velocity y
-        gravity: 0.8,
-        jumpPower: -15, 
+        width: playerBaseWidth, 
+        height: playerBaseHeight,
+        x: canvas.width / 2 - playerBaseWidth / 2,
+        y: canvas.height - playerBaseHeight - (canvas.height * 0.12), // Adjusted groundY
+        speed: 5, // Base speed, consider scaling with canvas size if needed
+        dx: 0, 
+        dy: 0, 
+        gravity: 0.8, // Base gravity
+        jumpPower: -15, // Base jump power
         isJumping: false,
-        groundY: canvas.height - 110, // Should match initial y
+        groundY: canvas.height - playerBaseHeight - (canvas.height * 0.12), // Initial groundY
         currentFrame: 0,
         animationTimer: 0,
-        animationSpeed: 8, // Lower is faster animation
-        direction: 'right', // 'left' or 'right'
+        animationSpeed: 8, 
+        direction: 'right', 
         images: assets.player,
 
         draw() {
@@ -120,85 +113,80 @@ function coreAssetLoaded() {
             if (this.isJumping) {
                 currentImage = this.direction === 'left' ? this.images.jumpLeft : this.images.jumpRight;
             } else {
-                if (this.dx !== 0) { // Moving
+                if (this.dx !== 0) { 
                     currentImage = this.direction === 'left' ? this.images.left[this.currentFrame] : this.images.right[this.currentFrame];
-                } else { // Idle - use first frame of current direction
+                } else { 
                     currentImage = this.direction === 'left' ? this.images.left[0] : this.images.right[0];
                 }
             }
             if (currentImage && currentImage.complete && currentImage.naturalHeight !== 0) {
                  ctx.drawImage(currentImage, this.x, this.y, this.width, this.height);
-            } else { // Fallback drawing if image not loaded
+            } else { 
                 ctx.fillStyle = 'green';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
         },
         update() {
-            // Horizontal movement
             this.x += this.dx;
 
-            // Animation
             if (this.dx !== 0 && !this.isJumping) {
                 this.animationTimer++;
                 if (this.animationTimer % this.animationSpeed === 0) {
-                    this.currentFrame = (this.currentFrame + 1) % this.images.left.length;
+                    this.currentFrame = (this.currentFrame + 1) % this.images.left.length; 
                 }
-            } else if (this.dx === 0 && !this.isJumping) {
-                this.currentFrame = 0;
+            } else if (this.dx === 0 && !this.isJumping) { 
+                this.currentFrame = 0; 
             }
 
-            // Vertical movement (Jump)
             if (this.isJumping) {
                 this.dy += this.gravity;
                 this.y += this.dy;
-                if (this.y >= this.groundY) {
+                if (this.y >= this.groundY) { 
                     this.y = this.groundY;
                     this.isJumping = false;
                     this.dy = 0;
                 }
             }
 
-            // --- Screen wrapping logic ---
+            // Screen wrapping logic
             if (this.x + this.width < 0) {
-                // Off left, appear at right
                 this.x = canvas.width;
             } else if (this.x > canvas.width) {
-                // Off right, appear at left
                 this.x = -this.width;
             }
         },
         jump() {
-            if (!this.isJumping) {
+            if (!this.isJumping && gameState === 'playing') { // Ensure game is playing
                 this.isJumping = true;
                 this.dy = this.jumpPower;
             }
         }
     };
 
-    // After player object definition
-    let originalSpeed = player.speed;
+    let originalSpeed = player.speed; // Store base speed
     let speedBoostTimeout = null;
 
     // --- Money Object ---
     const moneyItems = [];
     const moneyProps = {
-        width: 40,  // IMPORTANT: Adjust based on btc.png visual size
-        height: 40, // IMPORTANT: Adjust based on btc.png visual size
-        speed: 3, // Slightly faster coins
-        spawnInterval: 90, // Spawn a bit more frequently
+        baseWidth: 40, // Original reference width
+        width: 40,  
+        height: 40, 
+        speed: 3, // Base speed
+        spawnInterval: 90, 
         spawnTimer: 0
     };
 
     function createMoney() {
         const x = Math.random() * (canvas.width - moneyProps.width);
-        const y = -moneyProps.height; // Start above screen
+        const y = -moneyProps.height; 
         moneyItems.push({ x, y, width: moneyProps.width, height: moneyProps.height });
     }
 
     function updateMoney() {
         moneyProps.spawnTimer++;
-        if (moneyProps.spawnTimer >= moneyProps.spawnInterval) { // Use >= for consistency
-            moneyProps.spawnTimer = 0; // Reset timer
+        if (moneyProps.spawnTimer >= moneyProps.spawnInterval) { 
+            moneyProps.spawnTimer = 0; 
             createMoney();
         }
 
@@ -206,7 +194,6 @@ function coreAssetLoaded() {
             const money = moneyItems[i];
             money.y += moneyProps.speed;
 
-            // Collision with player
             if (
                 money.x < player.x + player.width &&
                 money.x + money.width > player.x &&
@@ -217,22 +204,20 @@ function coreAssetLoaded() {
                 score++;
                 scoreDisplay.textContent = `Score: ${score}`;
 
-                // --- Speed boost every 5 coins ---
-                if (score % 5 === 0) {
-                    // Always clear previous boost
+                if (score > 0 && score % 5 === 0) { // Ensure score > 0 for first boost
                     if (speedBoostTimeout !== null) {
                         clearTimeout(speedBoostTimeout);
-                        player.speed = originalSpeed;
                     }
-                    originalSpeed = player.speed;
-                    player.speed = originalSpeed * 1.5;
+                    // player.speed = originalSpeed * 1.5; // Boost based on current originalSpeed
+                    player.speed = player.speed * 1.3 > originalSpeed * 2 ? originalSpeed * 2 : player.speed * 1.3; // Cumulative but capped
+                    console.log("Speed Boost!", player.speed);
                     speedBoostTimeout = setTimeout(() => {
-                        player.speed = originalSpeed;
+                        player.speed = originalSpeed; // Reset to the very base speed
                         speedBoostTimeout = null;
-                    }, 5000);
+                        console.log("Speed normal.", player.speed);
+                    }, 3000); // 3 second boost
                 }
             }
-            // Remove if off screen
             else if (money.y > canvas.height) {
                 moneyItems.splice(i, 1);
             }
@@ -244,28 +229,15 @@ function coreAssetLoaded() {
             if (assets.btc && assets.btc.complete && assets.btc.naturalHeight !== 0) {
                 ctx.drawImage(assets.btc, money.x, money.y, money.width, money.height);
             } else {
-                ctx.fillStyle = 'gold'; // Fallback
+                ctx.fillStyle = 'gold'; 
                 ctx.fillRect(money.x, money.y, money.width, money.height);
             }
         });
     }
 
-    // --- Game Controls ---
-    const keys = {
-        ArrowLeft: false,
-        ArrowRight: false,
-        Space: false
-    };
+    const keys = { ArrowLeft: false, ArrowRight: false, Space: false };
 
     function handleKeyDown(e) {
-        if (gameState !== 'playing' && e.code !== "Enter" && e.code !== "Space") return; // Allow Enter/Space for potential title interaction
-
-        if (e.code === "ArrowLeft") keys.ArrowLeft = true;
-        if (e.code === "ArrowRight") keys.ArrowRight = true;
-        if (e.code === "Space") {
-            keys.Space = true;
-            if(gameState === 'playing') player.jump(); // Trigger jump immediately on press for responsiveness
-        }
         if (e.code === "Escape") {
             if (gameState === 'playing') {
                 pauseGame();
@@ -274,11 +246,20 @@ function coreAssetLoaded() {
             }
             return;
         }
+        if (gameState !== 'playing' && gameState !== 'title') return; // Allow space/enter on title for start
 
-
-        // Prevent page scroll on space/arrow keys if game is active
-        if (gameState === 'playing' && (e.code === "Space" || e.code.startsWith("Arrow"))) {
-            e.preventDefault();
+        if (gameState === 'playing') {
+            if (e.code === "ArrowLeft") keys.ArrowLeft = true;
+            if (e.code === "ArrowRight") keys.ArrowRight = true;
+            if (e.code === "Space") {
+                keys.Space = true; // Set key state
+                player.jump(); // Call jump action
+            }
+             if (e.code === "Space" || e.code.startsWith("Arrow")) {
+                e.preventDefault();
+            }
+        } else if (gameState === 'title' && (e.code === "Enter" || e.code === "Space")) {
+            initGame(); // Start game with Enter/Space from title
         }
     }
 
@@ -291,7 +272,7 @@ function coreAssetLoaded() {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
 
-    function processInputForMovement() { // Renamed to avoid confusion with player.jump()
+    function processInputForMovement() { 
         player.dx = 0; 
         if (keys.ArrowLeft) {
             player.dx = -player.speed;
@@ -301,21 +282,17 @@ function coreAssetLoaded() {
             player.dx = player.speed;
             player.direction = 'right';
         }
-        // Jump is handled in handleKeyDown for immediate response
     }
 
-
-    // --- Game Loop ---
     function gameLoop() {
-        if (gameState !== 'playing') return;
+        if (gameState !== 'playing') return; // Only run loop if playing
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw background
         if (assets.background && assets.background.complete && assets.background.naturalHeight !==0) {
             ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
         } else {
-            ctx.fillStyle = '#87CEEB'; // Fallback
+            ctx.fillStyle = '#87CEEB'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -331,108 +308,158 @@ function coreAssetLoaded() {
 
     function pauseGame() {
         if (gameState === 'playing') {
-            isPaused = true;
             gameState = 'paused';
-            pauseMenu.style.display = 'flex';
-            cancelAnimationFrame(animationFrameId);
+            pauseMenu.style.display = 'flex'; // CSS handles flex centering
+            // cancelAnimationFrame(animationFrameId); // Game loop already checks gameState
         }
     }
 
     function resumeGame() {
         if (gameState === 'paused') {
-            isPaused = false;
             gameState = 'playing';
             pauseMenu.style.display = 'none';
-            gameLoop();
+            animationFrameId = requestAnimationFrame(gameLoop); // Restart loop
         }
     }
 
     function goToMainMenu() {
+        if (speedBoostTimeout) { // Clear any active speed boost
+            clearTimeout(speedBoostTimeout);
+            player.speed = originalSpeed;
+            speedBoostTimeout = null;
+        }
         pauseMenu.style.display = 'none';
         canvas.style.display = 'none';
         scoreDisplay.style.display = 'none';
-        titleScreenDiv.style.display = 'flex';
+        titleScreenDiv.style.display = 'flex'; // CSS handles flex centering for title screen
         gameState = 'title';
     }
 
     resumeButton.addEventListener('click', resumeGame);
     mainMenuButton.addEventListener('click', goToMainMenu);
 
-    // --- Initialization ---
     function initGame() {
-        if (assetsLoadedCount < totalCoreAssetsToLoad) {
+        if (assetsLoadedCount < totalCoreAssetsToLoad && !assets.background.complete) { // Check background explicitly
             console.warn("Assets not fully loaded yet. Game start might be premature.");
-            // Optionally, you could disable the start button until assets are loaded.
+            // Optionally, could add a loading screen or delay
         }
 
         titleScreenDiv.style.display = 'none';
         canvas.style.display = 'block';
         scoreDisplay.style.display = 'block';
+        pauseMenu.style.display = 'none'; // Ensure pause menu is hidden
+
         score = 0;
         scoreDisplay.textContent = `Score: ${score}`;
+        
+        // Reset player state using scaled values
+        scaleGameObjects(); // Recalculate sizes and groundY first
         player.x = canvas.width / 2 - player.width / 2;
-        player.y = player.groundY;
+        player.y = player.groundY; // Place on the recalculated ground
         player.isJumping = false;
         player.dy = 0;
         player.direction = 'right';
-        player.currentFrame = 0; // Reset animation frame
+        player.currentFrame = 0; 
+        player.speed = originalSpeed; // Reset to base speed
+
         moneyItems.length = 0; 
         moneyProps.spawnTimer = 0;
+        
+        if (speedBoostTimeout) { // Clear any lingering boost from previous game
+            clearTimeout(speedBoostTimeout);
+            speedBoostTimeout = null;
+        }
+        
         gameState = 'playing';
 
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
         }
-        gameLoop();
-
-        // --- Reset speed boost on game start ---
-if (speedBoostTimeout) {
-    clearTimeout(speedBoostTimeout);
-    speedBoostTimeout = null;
-    player.speed = originalSpeed;
-}
+        animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    // Set canvas dimensions for title screen elements as well initially
+    // REMOVED: Lines that restricted titleScreenDiv and gameContainer size
     // titleScreenDiv.style.width = canvas.width + 'px';
     // titleScreenDiv.style.height = canvas.height + 'px';
     // document.getElementById('gameContainer').style.width = canvas.width + 'px';
     // document.getElementById('gameContainer').style.height = canvas.height + 'px';
 
-    // Touch controls for mobile
     const leftBtn = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
     const jumpBtn = document.getElementById('jumpBtn');
 
-    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); keys.ArrowLeft = true; });
-    leftBtn.addEventListener('touchend', e => { e.preventDefault(); keys.ArrowLeft = false; });
+    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = true; });
+    leftBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = false; });
+    leftBtn.addEventListener('mousedown', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = true; }); // For desktop testing
+    leftBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowLeft = false; }); // For desktop testing
 
-    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); keys.ArrowRight = true; });
-    rightBtn.addEventListener('touchend', e => { e.preventDefault(); keys.ArrowRight = false; });
+
+    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = true; });
+    rightBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = false; });
+    rightBtn.addEventListener('mousedown', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = true; }); // For desktop testing
+    rightBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.ArrowRight = false; }); // For desktop testing
 
     jumpBtn.addEventListener('touchstart', e => { 
         e.preventDefault(); 
-        keys.Space = true; 
-        if(gameState === 'playing') player.jump();
+        if(gameState === 'playing') {
+            keys.Space = true; 
+            player.jump();
+        }
     });
-    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); keys.Space = false; });
+    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); if(gameState === 'playing') keys.Space = false; });
+    jumpBtn.addEventListener('mousedown', e => { // For desktop testing
+        e.preventDefault(); 
+        if(gameState === 'playing') {
+            keys.Space = true; 
+            player.jump();
+        }
+    });
+    jumpBtn.addEventListener('mouseup', e => { e.preventDefault(); if(gameState === 'playing') keys.Space = false; });
 
-    // --- Handle window resize ---
+
+    function scaleGameObjects() {
+        const gameAreaBottomMargin = canvas.height * 0.13; // Reserve 13% for controls + buffer
+
+        // Player scaling
+        player.height = Math.max(40, canvas.height * 0.12); 
+        player.width = player.height * playerAspectRatio; 
+        player.groundY = canvas.height - player.height - gameAreaBottomMargin; 
+        
+        // If player somehow ends up below ground after resize (e.g. if height increased a lot)
+        if (player.y + player.height > canvas.height - gameAreaBottomMargin || player.y > player.groundY) {
+             player.y = player.groundY;
+        }
+
+
+        // Money scaling
+        moneyProps.width = Math.max(20, canvas.width * 0.04); 
+        moneyProps.height = moneyProps.width; 
+
+        // Potentially scale speeds and forces if desired for consistency across resolutions
+        // Example: (not fully implemented here, would need more adjustment)
+        // const scaleFactor = canvas.width / 800; // Compare to original design width
+        // player.speed = originalSpeed * scaleFactor;
+        // moneyProps.speed = originalMoneySpeed * scaleFactor;
+        // player.jumpPower = originalJumpPower * scaleFactor;
+        // player.gravity = originalGravity * scaleFactor;
+    }
+
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        player.groundY = canvas.height - player.height - 10;
-        if (player.y > player.groundY) player.y = player.groundY;
-        scaleGameObjects();
-    }
-    function scaleGameObjects() {
-        player.width = Math.max(40, canvas.width * 0.10);
-        player.height = Math.max(50, canvas.height * 0.15);
-        player.groundY = canvas.height - player.height - 10;
-        if (player.y > player.groundY) player.y = player.groundY;
-        moneyProps.width = Math.max(20, canvas.width * 0.05);
-        moneyProps.height = moneyProps.width;
+        
+        // Initial groundY based on new canvas height, player height might still be old value here
+        // player.groundY = canvas.height - player.height - (canvas.height * 0.12); 
+        // if (player.y > player.groundY) player.y = player.groundY;
+
+        scaleGameObjects(); // This will correctly set player height and then groundY
+
+        // If game is playing, re-center player or adjust position if needed
+        if (gameState === 'playing' && (player.x > canvas.width - player.width || player.x < 0)) {
+             // player.x = canvas.width / 2 - player.width / 2; // Option: re-center
+        }
+        // No need to redraw here, game loop will handle it
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Call once on load
+    resizeCanvas(); // Initial call to set correct sizes
 });

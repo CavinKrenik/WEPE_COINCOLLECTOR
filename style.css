@@ -2,6 +2,8 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
+  font-family: Arial, sans-serif;
 }
 
 #gameContainer {
@@ -14,10 +16,14 @@ html, body {
 }
 
 #titleScreen {
-  position: relative;
+  position: relative; /* Changed from absolute to allow normal flow or specific positioning if #gameContainer wasn't fixed */
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  display: flex; /* Added to help center content if needed, works with current setup */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 #titleImage {
@@ -26,24 +32,26 @@ html, body {
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  z-index: 1;
+  z-index: 1; /* Ensure it's behind buttons if titleScreen is flex and buttons are direct children */
 }
 
 #startButton,
 #startButtonImage {
-  position: absolute;
-  left: 50%;
-  top: 70%; /* Adjust as needed */
-  transform: translate(-50%, -50%);
+  position: relative; /* Changed from absolute to flow better if titleScreen is flex */
+  /* Centering will be handled by titleScreen's flex properties */
+  /* left: 50%; */
+  /* top: 70%; */ /* Adjust as needed */
+  /* transform: translate(-50%, -50%); */
+  margin-top: 65vh; /* Pushes button down, adjust this value */
   z-index: 2;
-  font-size: 2.5vw;
-  padding: 1vw 4vw;
+  font-size: clamp(16px, 2.5vw, 28px); /* Responsive font size */
+  padding: 1vh 3vw; /* Responsive padding */
   background: rgba(255,255,255,0.85);
   border: 2px solid #888;
-  border-radius: 1vw;
+  border-radius: 1vh; /* Responsive border radius */
   cursor: pointer;
-  max-width: 30vw;
-  max-height: 10vh;
+  max-width: 40vw; /* Max width */
+  /* max-height: 10vh; remove or adjust if causing issues with padding */
   width: auto;
   height: auto;
   box-sizing: border-box;
@@ -53,57 +61,94 @@ html, body {
   background: none;
   border: none;
   padding: 0;
+  margin-top: 65vh; /* Consistent margin */
 }
 
 #gameCanvas {
-  display: none;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: 100vw;
-  max-height: 100vh;
+  display: none; /* JS will change to block */
+  width: 100vw;  /* Ensure it takes full viewport width */
+  height: 100vh; /* Ensure it takes full viewport height */
+  max-width: 100vw; /* Redundant if width is 100vw but harmless */
+  max-height: 100vh; /* Redundant if height is 100vh but harmless */
 }
 
 #scoreDisplay {
   position: absolute;
-  top: 1vh;
-  left: 1vw;
-  font-size: 2vw;
+  top: 1.5vh; /* Slightly more space from top */
+  left: 2vw;  /* Slightly more space from left */
+  font-size: clamp(14px, 2.5vw, 22px); /* Responsive font size */
+  color: #fff;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.6), -1px -1px 1px rgba(0,0,0,0.6); /* Improved text shadow */
+  z-index: 5; /* Ensure it's above canvas */
 }
 
 #pauseMenu {
-  display: none;
+  display: none; /* JS handles display */
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75); /* Slightly darker */
   color: white;
   z-index: 10;
-  font-size: 2vw;
+  display: flex; /* Use flex for centering */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 3vw, 30px); /* Responsive font size */
 }
+
+#pauseMenu div {
+    margin-bottom: 3vh;
+    font-weight: bold;
+}
+
+#pauseMenu button {
+    font-size: clamp(16px, 2.5vw, 26px); /* Responsive font size for buttons */
+    padding: 1.5vh 4vw;
+    margin: 1vh 0;
+    min-width: 40vw;
+    background-color: #eee;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 1vh;
+    cursor: pointer;
+}
+#pauseMenu button:hover {
+    background-color: #ddd;
+}
+
 
 #touchControls {
   position: fixed;
-  bottom: 3vh;
+  bottom: 1.5vh; /* Adjusted bottom */
   left: 0;
   width: 100vw;
   display: flex;
-  justify-content: center;
-  gap: 4vw;
+  justify-content: space-around; /* Better spacing */
+  align-items: center; /* Vertically align items if they have different heights */
+  gap: 1vw; /* Adjusted gap */
   z-index: 20;
   pointer-events: none; /* Allow only buttons to be clickable */
 }
+
 #touchControls button {
   pointer-events: auto;
-  font-size: 7vw;
-  padding: 2vw 4vw;
-  background: rgba(255,255,255,0.7);
-  border: 2px solid #888;
-  border-radius: 2vw;
+  font-size: clamp(24px, 7vw, 40px); /* Larger, clearer icons/text, adjust min/max as needed */
+  padding: 1.5vh 2.5vw; /* Adjusted padding */
+  background: rgba(255,255,255,0.6); /* Slightly more transparent */
+  border: 1px solid rgba(200,200,200,0.8); /* Softer border */
+  border-radius: 2vh; /* Adjusted radius */
   cursor: pointer;
   user-select: none;
+  line-height: 1; /* Helps with vertical alignment of text/icons */
+  min-width: 18vw; /* Ensure buttons have a decent tap area */
+  text-align: center;
 }
-@media (min-width: 800px) {
-  #touchControls { display: none; }
+
+@media (min-width: 800px) { /* Hides touch controls on larger screens (desktops) */
+  #touchControls {
+     display: none;
+  }
 }
