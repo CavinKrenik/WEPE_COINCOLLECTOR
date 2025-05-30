@@ -80,3 +80,28 @@ html, body {
   z-index: 10;
   font-size: 2vw;
 }
+
+#touchControls {
+  position: fixed;
+  bottom: 3vh;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  gap: 4vw;
+  z-index: 20;
+  pointer-events: none; /* Allow only buttons to be clickable */
+}
+#touchControls button {
+  pointer-events: auto;
+  font-size: 7vw;
+  padding: 2vw 4vw;
+  background: rgba(255,255,255,0.7);
+  border: 2px solid #888;
+  border-radius: 2vw;
+  cursor: pointer;
+  user-select: none;
+}
+@media (min-width: 800px) {
+  #touchControls { display: none; }
+}

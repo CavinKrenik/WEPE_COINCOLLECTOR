@@ -373,4 +373,21 @@ function coreAssetLoaded() {
     // document.getElementById('gameContainer').style.width = canvas.width + 'px';
     // document.getElementById('gameContainer').style.height = canvas.height + 'px';
 
+    // Touch controls for mobile
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const jumpBtn = document.getElementById('jumpBtn');
+
+    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); keys.ArrowLeft = true; });
+    leftBtn.addEventListener('touchend', e => { e.preventDefault(); keys.ArrowLeft = false; });
+
+    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); keys.ArrowRight = true; });
+    rightBtn.addEventListener('touchend', e => { e.preventDefault(); keys.ArrowRight = false; });
+
+    jumpBtn.addEventListener('touchstart', e => { 
+        e.preventDefault(); 
+        keys.Space = true; 
+        if(gameState === 'playing') player.jump();
+    });
+    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); keys.Space = false; });
 });
