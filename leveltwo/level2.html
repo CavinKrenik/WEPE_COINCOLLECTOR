@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WEPE Coin Collector - Level 2</title>
+    <link rel="stylesheet" href="level2.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="timerDisplay">Time: 2:00</div>
+        <div id="pauseMenu" style="display:none;">
+            <div>Game Paused</div>
+            <button id="resumeButton">Resume</button>
+            <button id="retryButton">Retry Level</button>
+            <button id="mainMenuButton">Main Menu</button>
+        </div>
+        <div id="touchControls">
+            <button id="leftBtn">&#9664;</button>
+            <button id="jumpBtn">⭮</button>
+            <button id="rightBtn">&#9654;</button>
+        </div>
+        <button id="nextLevelBtn" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;">Next Level</button>
+    </div>
+    <script src="level2.js"></script>
+</body>
+</html>

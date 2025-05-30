@@ -549,52 +549,22 @@ window.addEventListener('load', function () {
             animationFrameId = null;
         }
 
-        if (gameState === 'gameover') { // Prevent multiple executions
+        if (gameState === 'gameover') {
             console.log("endGame called but already in gameover state.");
             return;
         }
         gameState = 'gameover';
         console.log("gameState changed to 'gameover'");
 
-
         canvas.style.display = 'none';
         scoreDisplay.style.display = 'none';
         timerDisplay.style.display = 'none';
         touchControlsDiv.style.display = 'none';
 
-        if (!highscoreEntered) {
-            let currentHighscores = JSON.parse(localStorage.getItem('highscores')) || []; // Get latest scores
-            let place = -1;
-            for (let i = 0; i < currentHighscores.length; i++) {
-                if (score > currentHighscores[i].score) {
-                    place = i;
-                    break;
-                }
-            }
-            if (place === -1 && currentHighscores.length < 3) {
-                place = currentHighscores.length;
-            }
-
-
-            if (place !== -1) { // Qualifies for highscore list
-                let initials = prompt(`NEW HIGH SCORE: ${score}!\nEnter your initials (3 letters):`, "");
-                if (initials !== null) { // User didn't cancel prompt
-                    initials = initials.substring(0, 3).toUpperCase() || "???";
-                    currentHighscores.splice(place, 0, { initials, score });
-                    highscores = currentHighscores.slice(0, 3); // Keep top 3, assign to global highscores
-                    localStorage.setItem('highscores', JSON.stringify(highscores));
-                    console.log("New highscore saved:", highscores);
-                } else {
-                    console.log("Highscore entry cancelled by user.");
-                }
-            } else {
-                console.log("Score did not qualify for highscores or list is full.");
-            }
-            highscoreEntered = true; // Mark that highscore process has happened
-        } else {
-            console.log("Highscore entry already processed for this game session.");
-        }
-        showHighscores(true); // Ask to play again
+        // Automatically transition to Level 2 after a short delay
+        setTimeout(function() {
+            window.location.href = "leveltwo/level2.html";
+        }, 2000); // 2 second pause before transition (adjust as needed)
     }
 
     function showHighscores(askRetry = false) {
