@@ -561,10 +561,8 @@ window.addEventListener('load', function () {
         timerDisplay.style.display = 'none';
         touchControlsDiv.style.display = 'none';
 
-        // Automatically transition to Level 2 after a short delay
-        setTimeout(function() {
-            window.location.href = "leveltwo/level2.html";
-        }, 2000); // 2 second pause before transition (adjust as needed)
+        // Automatically transition to Level 2 (IMMEDIATE)
+        window.location.href = "leveltwo/level2.html";
     }
 
     function showHighscores(askRetry = false) {
