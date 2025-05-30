@@ -347,7 +347,9 @@ window.addEventListener('load', function() {
         titleScreenDiv.style.display = 'none';
         canvas.style.display = 'block';
         scoreDisplay.style.display = 'block';
-        pauseMenu.style.display = 'none'; // Ensure pause menu is hidden
+        pauseMenu.style.display = 'none';
+
+        document.getElementById('timerDisplay').style.display = 'block'; // <-- Add here
 
         score = 0;
         scoreDisplay.textContent = `Score: ${score}`;
@@ -371,6 +373,8 @@ window.addEventListener('load', function() {
         }
         
         gameState = 'playing';
+
+        startTimer(); // Start the timer when the game initializes
 
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -462,4 +466,74 @@ window.addEventListener('load', function() {
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas(); // Initial call to set correct sizes
+
+    let timer = 120; // seconds
+    let timerInterval = null;
+    let highscores = JSON.parse(localStorage.getItem('highscores')) || [];
+
+    function startTimer() {
+        timer = 120;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            timer--;
+            updateTimerDisplay();
+            if (timer <= 0) {
+                clearInterval(timerInterval);
+                endGame();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const min = Math.floor(timer / 60);
+        const sec = timer % 60;
+        document.getElementById('timerDisplay').textContent = `Time: ${min}:${sec.toString().padStart(2, '0')}`;
+    }
+    if (timerInterval) clearInterval(timerInterval);
+    startTimer();
+
+    function endGame() {
+        gameState = 'gameover';
+        canvas.style.display = 'none';
+        scoreDisplay.style.display = 'none';
+        document.getElementById('timerDisplay').style.display = 'none';
+
+        if (!highscoreEntered) {
+            // Check for highscore
+            let place = highscores.findIndex(hs => score > hs.score);
+            if (place === -1 && highscores.length < 3) place = highscores.length;
+            if (place !== -1) {
+                let initials = prompt("NEW HIGH SCORE! Enter your initials (3 letters):", "");
+                initials = (initials || "???").substring(0,3).toUpperCase();
+                highscores.splice(place, 0, { initials, score });
+                highscores = highscores.slice(0, 3); // Keep top 3
+                localStorage.setItem('highscores', JSON.stringify(highscores));
+            }
+            highscoreEntered = true;
+        }
+        showHighscores(true); // Pass true to show "Try Again" prompt
+    }
+
+    function showHighscores(askRetry = false) {
+        let msg = "HIGHSCORES:\n";
+        highscores.forEach((hs, i) => {
+            msg += `${i+1}. ${hs.initials} - ${hs.score}\n`;
+        });
+        if (askRetry) {
+            msg += "\nPlay again?";
+            if (confirm(msg)) {
+                highscoreEntered = false; // Reset for next game
+                initGame();
+            } else {
+                location.reload();
+            }
+        } else {
+            alert(msg);
+        }
+    }
+
+    let highscoreEntered = false; // Add at the top with your other globals
+
+    const viewHighscoresButton = document.getElementById('viewHighscoresButton');
+    viewHighscoresButton.addEventListener('click', () => showHighscores());
 });
