@@ -16,9 +16,14 @@ html, body {
 }
 
 #titleScreen {
-  position: relative;
+  position: relative; /* Changed from absolute to allow normal flow or specific positioning if #gameContainer wasn't fixed */
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
+  display: flex; /* Added to help center content if needed, works with current setup */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 #titleImage {
@@ -32,19 +37,16 @@ html, body {
 
 #startButton,
 #startButtonImage {
-  position: absolute;
-  left: 50%;
-  top: 65%; /* Lower value moves it higher, e.g., 55% */
-  transform: translate(-50%, -50%);
+  position: relative;
+  margin-top: 22vh;   /* Move button much higher on the screen */
   z-index: 2;
-  font-size: clamp(16px, 2.5vw, 28px); /* Responsive font size */
-  padding: 1vh 3vw; /* Responsive padding */
+  font-size: clamp(16px, 2.5vw, 28px);
+  padding: 1vh 3vw;
   background: rgba(255,255,255,0.85);
   border: 2px solid #888;
-  border-radius: 1vh; /* Responsive border radius */
+  border-radius: 1vh;
   cursor: pointer;
-  max-width: 40vw; /* Max width */
-  /* max-height: 10vh; remove or adjust if causing issues with padding */
+  max-width: 40vw;
   width: auto;
   height: auto;
   box-sizing: border-box;
