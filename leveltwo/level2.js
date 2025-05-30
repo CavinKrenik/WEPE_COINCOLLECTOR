@@ -14,16 +14,18 @@ const assets = {
   coin: new Image(),
   bushBig: new Image(),
   bushSmall: new Image(),
-  dirt: new Image(),
-  grass: new Image(),
-  bridge: new Image(),
-  blockEmpty: new Image(),
+  // dirt: new Image(), // Uncomment if you have these assets
+  // grass: new Image(),
+  // bridge: new Image(),
+  // blockEmpty: new Image(),
   spikes: new Image(),
-  music: new Audio() // Initialize Audio object
+  music: new Audio()
 };
 
-// Set sources for assets - ENSURE THESE FILES ARE IN THE 'leveltwo' FOLDER or update paths
+// --- IMPORTANT: Ensure 'level2background.gif' is in the 'leveltwo' folder ---
 assets.bg.src = "level2background.gif";
+// --- ---
+
 assets.playerLeft[0].src = "Left.png";
 assets.playerLeft[1].src = "left1.png";
 assets.playerRight[0].src = "right.png";
@@ -34,28 +36,30 @@ assets.platform.src = "Platform.png";
 assets.coin.src = "btc.png";
 assets.bushBig.src = "Big_Bush.png";
 assets.bushSmall.src = "Small_Bush.png";
-assets.dirt.src = "Dirt_Block.png";
-assets.grass.src = "Grass_Block.png";
-assets.bridge.src = "Bridge.png";
-assets.blockEmpty.src = "Empty_Brown_Block.png";
 assets.spikes.src = "Spikes.png";
 
-assets.music.src = "Fast Desert Theme.wav"; // Set music source
+assets.music.src = "Fast Desert Theme.wav";
 assets.music.loop = true;
 assets.music.volume = 0.5;
 
-// UI Elements
+// UI Elements from HTML
 const pauseMenu = document.getElementById("pauseMenu");
 const resumeButton = document.getElementById("resumeButton");
-const retryButton = document.getElementById("retryButton");
-const mainMenuButton = document.getElementById("mainMenuButton");
+const retryButton = document.getElementById("retryButton"); // For pause menu
+const mainMenuButton = document.getElementById("mainMenuButton"); // For pause menu
+
+// End Screen Buttons from HTML
+const endScreenRetryBtn = document.getElementById("endScreenRetryBtn");
+const endScreenMainMenuBtn = document.getElementById("endScreenMainMenuBtn");
+
 
 // Game state
 let score = 0;
-let timer = 120;
-let gameState = "playing"; // Should be set by startGame
+let timer = 120; // 2 minutes
+let gameState = "loading"; // Start with loading state
 let cameraX = 0;
 let timerInterval;
+let totalGameWidth = 6000; // Define the total width of your game world, should match platform extent
 
 // Player
 const player = {
@@ -76,7 +80,6 @@ const player = {
     this.x += this.dx;
     this.y += this.dy;
 
-    // Animation logic
     if (this.dx !== 0 && this.onGround) {
       this.animationTimer++;
       if (this.animationTimer % this.animationSpeed === 0) {
@@ -91,108 +94,148 @@ const player = {
     platforms.forEach(p => {
       if (
         this.x + this.width > p.x && this.x < p.x + p.width &&
-        this.y + this.height > p.y && this.y + this.height < p.y + p.height && // Check bottom of player against top of platform
-        this.dy >= 0 // Player is falling or on the platform
+        this.y + this.height > p.y && this.y + this.height < p.y + p.height / 2 + this.dy &&
+        this.dy >= 0
       ) {
-        this.y = p.y - this.height; // Correct player position
+        this.y = p.y - this.height;
         this.dy = 0;
         this.onGround = true;
-        this.isJumping = false; // Landed
+        this.isJumping = false;
       }
     });
 
-    // Ground collision (main ground)
-    if (this.y + this.height > canvas.height - 40) { // Assuming 40 is the main ground height
-      this.y = canvas.height - 40 - this.height;
-      this.dy = 0;
-      this.onGround = true;
-      this.isJumping = false; // Landed
-    }
-
-
-    // Prevent falling through top boundary (if any) - usually not needed for platformers like this
-    // if (this.y < 0) {
-    //    this.y = 0;
-    //    this.dy = 0;
-    // }
-
-
-    // Screen wrapping (optional, but you have it)
-    // if (this.x + this.width < 0) {
-    //   this.x = canvas.width;
-    // } else if (this.x > canvas.width) {
-    //   this.x = -this.width;
-    // }
-    // For a horizontal scroller, you might want to limit player to screen start
-     if (this.x < 0) { // Prevent moving too far left off-screen (relative to camera)
-       this.x = 0;
+     if (this.x < 0) { // Prevent moving left of absolute 0
+        this.x = 0;
+     }
+     // Prevent moving beyond the defined game width (optional, if you want a hard stop)
+     if (this.x + this.width > totalGameWidth) {
+        this.x = totalGameWidth - this.width;
      }
 
 
-    cameraX = Math.max(0, this.x - canvas.width / 3); // Adjust camera logic slightly, e.g. player at 1/3 of screen
+    let targetCameraX = this.x - canvas.width / 3;
+    cameraX = Math.max(0, Math.min(targetCameraX, totalGameWidth - canvas.width)); // Camera doesn't go left of 0 or beyond game width
   },
   draw() {
     let img;
-    if (this.isJumping || !this.onGround) { // Simplified jumping animation check
+    if (this.isJumping || !this.onGround) {
       img = this.direction === "left" ? assets.playerJumpLeft : assets.playerJumpRight;
-    } else if (this.dx !== 0) { // Moving
+    } else if (this.dx !== 0) {
       img = this.direction === "left" ? assets.playerLeft[this.currentFrame] : assets.playerRight[this.currentFrame];
-    } else { // Idle
+    } else {
       img = this.direction === "left" ? assets.playerLeft[0] : assets.playerRight[0];
     }
 
     if (img && img.complete && img.naturalHeight !== 0) {
       ctx.drawImage(img, this.x - cameraX, this.y, this.width, this.height);
     } else {
-      // Fallback drawing if image isn't ready
       ctx.fillStyle = "green";
       ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
     }
   },
   jump() {
-    if (this.onGround && gameState === "playing") { // Check gameState here too
+    if (this.onGround && gameState === "playing") {
       this.dy = this.jumpPower;
       this.isJumping = true;
-      this.onGround = false; // Player is no longer on ground once jump starts
+      this.onGround = false;
     }
   },
   reset() {
     this.x = 100;
-    this.y = canvas.height - 160; // Initial position
+    this.y = canvas.height - 160;
     this.dx = 0;
     this.dy = 0;
-    this.onGround = false; // Will be set true by collision detection if starting on a platform
+    this.onGround = false;
     this.isJumping = false;
     this.direction = "right";
     this.currentFrame = 0;
-    cameraX = 0;
   }
 };
 
-// Platforms, coins, spikes (same as before, ensure coordinates make sense for level design)
-const platforms = [
-  // Main ground platform (example, adjust or use your array)
-  { x: 0, y: canvas.height - 40, width: 2000, height: 40, type: 'ground' }, // Added type for clarity
+const platformBaseY = canvas.height - 40;
+const coinWidth = 32;
+const coinHeight = 32;
+const spikeHeight = 20;
 
-  // Floating platforms
-  { x: 300, y: canvas.height - 180, width: 120, height: 20 },
-  { x: 500, y: canvas.height - 250, width: 120, height: 20 },
-  { x: 700, y: canvas.height - 180, width: 120, height: 20 },
-  { x: 1000, y: canvas.height - 220, width: 120, height: 20 },
-  { x: 1400, y: canvas.height - 180, width: 120, height: 20 }
-  // Add more platforms as needed for your level design
+const platforms = [
+  { x: 0, y: platformBaseY, width: totalGameWidth, height: 40, type: 'ground' }, // Main ground uses totalGameWidth
+  { x: 300, y: platformBaseY - 140, width: 120, height: 20 },
+  { x: 500, y: platformBaseY - 210, width: 120, height: 20 },
+  { x: 700, y: platformBaseY - 140, width: 120, height: 20 },
+  { x: 1000, y: platformBaseY - 180, width: 120, height: 20 },
+  { x: 1400, y: platformBaseY - 140, width: 120, height: 20 },
+  { x: 1700, y: platformBaseY - 100, width: 150, height: 20 },
+  { x: 1900, y: platformBaseY - 200, width: 100, height: 20 },
+  { x: 2100, y: platformBaseY - 150, width: 120, height: 20 },
+  { x: 2350, y: platformBaseY - 120, width: 180, height: 20 },
+  { x: 2600, y: platformBaseY - 220, width: 100, height: 20 },
+  { x: 2800, y: platformBaseY - 100, width: 150, height: 20 },
+  { x: 3050, y: platformBaseY - 180, width: 120, height: 20 },
+  { x: 3300, y: platformBaseY - 130, width: 200, height: 20 },
+  { x: 3600, y: platformBaseY - 200, width: 100, height: 20 },
+  { x: 3800, y: platformBaseY - 100, width: 150, height: 20 },
+  { x: 4050, y: platformBaseY - 160, width: 120, height: 20 },
+  { x: 4300, y: platformBaseY - 120, width: 180, height: 20 },
+  { x: 4550, y: platformBaseY - 210, width: 100, height: 20 },
+  { x: 4800, y: platformBaseY - 100, width: 150, height: 20 },
+  { x: 5000, y: platformBaseY - 170, width: 200, height: 20 },
+  { x: 5300, y: platformBaseY - 150, width: 150, height: 20 },
+  { x: 5550, y: platformBaseY - 100, width: 100, height: 20 },
+  { x: 5800, y: platformBaseY - 180, width: 180, height: 20 }, // Near the end of 6000 width
 ];
 
 const coins = [
-  { x: 350, y: canvas.height - 230 - 32, collected: false, width: 32, height: 32 }, // Placed above platform
-  { x: 550, y: canvas.height - 300 - 32, collected: false, width: 32, height: 32 }, // Placed above platform
-  { x: 1050, y: canvas.height - 260 - 32, collected: false, width: 32, height: 32 },// Placed above platform
-  { x: 1450, y: canvas.height - 230 - 32, collected: false, width: 32, height: 32 } // Placed above platform
+  { x: 350, y: platformBaseY - 140 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 550, y: platformBaseY - 210 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 1050, y: platformBaseY - 180 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 1450, y: platformBaseY - 140 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 1750, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 1950, y: platformBaseY - 200 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2150, y: platformBaseY - 150 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2400, y: platformBaseY - 120 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2650, y: platformBaseY - 220 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2850, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 3100, y: platformBaseY - 180 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 3350, y: platformBaseY - 130 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 3650, y: platformBaseY - 200 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 3850, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4100, y: platformBaseY - 160 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4350, y: platformBaseY - 120 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4600, y: platformBaseY - 210 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4850, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 5050, y: platformBaseY - 170 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 5350, y: platformBaseY - 150 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 5600, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 5850, y: platformBaseY - 180 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  // Ground coins
+  { x: 400, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 900, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 1600, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2200, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 2900, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 3500, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4200, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 4900, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 5500, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
 ];
 
 const spikes = [
-  { x: 850, y: canvas.height - 40 - 20, width: 40, height: 20 }, // On the main ground
-  { x: 1300, y: canvas.height - 40 - 20, width: 40, height: 20 } // On the main ground
+  { x: 850, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 1300, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 1800, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 1780, y: platformBaseY - 100 - spikeHeight, width: 40, height: spikeHeight }, // On platform x:1700
+  { x: 2500, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 2540, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 3000, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 3350, y: platformBaseY - 130 - spikeHeight, width: 40, height: spikeHeight }, // On platform x:3300
+  { x: 3700, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 4000, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 4040, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 4400, y: platformBaseY - 120 - spikeHeight, width: 40, height: spikeHeight }, // On platform x:4300
+  { x: 4700, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 5100, y: platformBaseY - 170 - spikeHeight, width: 40, height: spikeHeight }, // On platform x:5000
+  { x: 5400, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 5850, y: platformBaseY - 180 - spikeHeight, width: 40, height: spikeHeight }, // On platform x:5800
 ];
 
 // Input
@@ -200,17 +243,12 @@ const keys = {};
 window.addEventListener("keydown", e => {
   if (e.code === "Escape") {
       togglePause();
-      e.preventDefault(); // Prevent default browser action for Escape
-      return;
+      e.preventDefault(); return;
   }
   if (gameState !== "playing") return;
-
   if (e.code === "ArrowLeft") { keys.left = true; e.preventDefault(); }
   if (e.code === "ArrowRight") { keys.right = true; e.preventDefault(); }
-  if (e.code === "Space") {
-      player.jump();
-      e.preventDefault(); // Prevent page scroll on Space
-  }
+  if (e.code === "Space") { player.jump(); e.preventDefault(); }
 });
 window.addEventListener("keyup", e => {
   if (e.code === "ArrowLeft") keys.left = false;
@@ -230,40 +268,33 @@ function togglePause() {
     gameState = "paused";
     pauseMenu.style.display = "flex";
     if (assets.music) assets.music.pause();
-    if (timerInterval) clearInterval(timerInterval); // Also pause timer interval
+    if (timerInterval) clearInterval(timerInterval);
   } else if (gameState === "paused") {
     gameState = "playing";
     pauseMenu.style.display = "none";
-    if (assets.music) { // Resume music if it was playing
+    if (assets.music) {
         let playPromise = assets.music.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => console.warn("Music resume failed:", error));
-        }
+        if (playPromise !== undefined) playPromise.catch(error => console.warn("Music resume failed:", error));
     }
-    startTimer(timer); // Resume timer from where it left off
-    requestAnimationFrame(gameLoop); // resume loop
+    startTimer(timer);
+    requestAnimationFrame(gameLoop);
   }
 }
 
 resumeButton.onclick = togglePause;
-retryButton.onclick = () => location.reload(); // Simple retry
-mainMenuButton.onclick = () => window.location.href = "../index.html"; // Navigate to main menu
+retryButton.onclick = () => location.reload();
+mainMenuButton.onclick = () => window.location.href = "../index.html";
 
 // Timer
-function startTimer(currentTime = 120) { // Allow resuming timer
+function startTimer(currentTime = 120) {
   timer = currentTime;
   updateTimerDisplay();
-  if (timerInterval) clearInterval(timerInterval); // Clear any existing interval
+  if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    if (gameState !== "playing") { // Only decrement if game is actively playing
-        clearInterval(timerInterval); // Stop interval if not playing
-        return;
-    }
+    if (gameState !== "playing") { clearInterval(timerInterval); return; }
     timer--;
     updateTimerDisplay();
-    if (timer <= 0) {
-      endLevel(false); // Pass false, indicating time ran out
-    }
+    if (timer <= 0) endLevel();
   }, 1000);
 }
 
@@ -272,45 +303,54 @@ function updateTimerDisplay() {
   const seconds = timer % 60;
   document.getElementById("timerDisplay").textContent = `Time: ${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
-// Update score display function
+
 function updateScoreDisplay() {
     document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
 }
 
-
 // Game loop
 function gameLoop() {
-  if (gameState !== "playing") return; // Stop loop if not playing
-
+  if (gameState !== "playing") return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw background (parallax effect can be added later if desired)
-  if (assets.bg.complete && assets.bg.naturalHeight !== 0) {
-      const bgWidth = assets.bg.width;
-      const bgHeight = assets.bg.height;
-      // Simple scrolling background; adjust for desired effect
-      let bgX = (-cameraX * 0.5) % bgWidth; // Slower scroll for parallax
-      if (bgX > 0) bgX -= bgWidth; // Ensure seamless loop from left
+  // --- Updated Background Drawing Logic ---
+  if (assets.bg.complete && assets.bg.naturalWidth > 0) {
+      const bgImage = assets.bg;
+      const bgWidth = bgImage.naturalWidth;
+      // const bgHeight = bgImage.naturalHeight; // Use if you need original height for aspect ratio
+      const canvasHeight = canvas.height;
+      const parallaxFactor = 0.3; // Adjust for more or less parallax (0.1 to 0.8 is common)
 
-      ctx.drawImage(assets.bg, bgX, 0, bgWidth, canvas.height); // Stretch/tile as needed
-      ctx.drawImage(assets.bg, bgX + bgWidth, 0, bgWidth, canvas.height); // Draw second image for seamless tiling
+      let startX = (-cameraX * parallaxFactor);
+      // Ensure seamless tiling by adjusting startX with modulo, handling negative results correctly
+      startX = startX % bgWidth;
+      if (startX > 0) {
+          startX -= bgWidth;
+      }
+      
+      for (let x = startX; x < canvas.width; x += bgWidth) {
+          ctx.drawImage(bgImage, x, 0, bgWidth, canvasHeight); // Stretches/crops bg to canvas height
+      }
   } else {
-      ctx.fillStyle = "#222"; // Fallback background
+      ctx.fillStyle = "#222"; // Fallback
       ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
+  // --- End of Background Drawing ---
 
 
-  // Draw scenery elements (bushes, etc.)
-  if (assets.bushBig.complete) ctx.drawImage(assets.bushBig, 600 - cameraX, canvas.height - 40 - assets.bushBig.height); // Position on ground
-  if (assets.bushSmall.complete) ctx.drawImage(assets.bushSmall, 1200 - cameraX, canvas.height - 40 - assets.bushSmall.height); // Position on ground
+  if (assets.bushBig.complete) ctx.drawImage(assets.bushBig, 600 - cameraX, platformBaseY - assets.bushBig.height);
+  if (assets.bushSmall.complete) ctx.drawImage(assets.bushSmall, 1200 - cameraX, platformBaseY - assets.bushSmall.height);
+  if (assets.bushBig.complete) ctx.drawImage(assets.bushBig, 2600 - cameraX, platformBaseY - assets.bushBig.height);
+  if (assets.bushSmall.complete) ctx.drawImage(assets.bushSmall, 3500 - cameraX, platformBaseY - assets.bushSmall.height);
+  if (assets.bushBig.complete) ctx.drawImage(assets.bushBig, 4500 - cameraX, platformBaseY - assets.bushBig.height); // More scenery
 
 
   platforms.forEach(p => {
-    if(assets.platform.complete && assets.platform.naturalHeight !== 0) {
-        ctx.drawImage(assets.platform, p.x - cameraX, p.y, p.width, p.height);
+    let platformImg = assets.platform;
+    if(platformImg.complete && platformImg.naturalHeight !== 0) {
+        ctx.drawImage(platformImg, p.x - cameraX, p.y, p.width, p.height);
     } else {
-        ctx.fillStyle = "grey"; // Fallback
-        ctx.fillRect(p.x - cameraX, p.y, p.width, p.height);
+        ctx.fillStyle = "grey"; ctx.fillRect(p.x - cameraX, p.y, p.width, p.height);
     }
   });
 
@@ -318,21 +358,11 @@ function gameLoop() {
     if(assets.spikes.complete && assets.spikes.naturalHeight !== 0) {
         ctx.drawImage(assets.spikes, s.x - cameraX, s.y, s.width, s.height);
     } else {
-        ctx.fillStyle = "red"; // Fallback
-        ctx.fillRect(s.x - cameraX, s.y, s.width, s.height);
+        ctx.fillStyle = "red"; ctx.fillRect(s.x - cameraX, s.y, s.width, s.height);
     }
-
-    // Collision with spikes
-    if (
-      player.x < s.x - cameraX + s.width &&
-      player.x + player.width > s.x - cameraX &&
-      player.y < s.y + s.height &&
-      player.y + player.height > s.y
-    ) {
-      player.reset(); // Reset player on spike collision
-      // Potentially deduct score or lives here
-      score = 0; // Reset score as an example
-      updateScoreDisplay();
+    if (player.x < s.x + s.width && player.x + player.width > s.x &&
+        player.y < s.y + s.height && player.y + player.height > s.y) {
+      player.reset(); score = Math.max(0, score - 5); updateScoreDisplay();
     }
   });
 
@@ -341,20 +371,11 @@ function gameLoop() {
         if(assets.coin.complete && assets.coin.naturalHeight !== 0) {
             ctx.drawImage(assets.coin, c.x - cameraX, c.y, c.width, c.height);
         } else {
-            ctx.fillStyle = "gold"; // Fallback
-            ctx.fillRect(c.x - cameraX, c.y, c.width, c.height);
+            ctx.fillStyle = "gold"; ctx.fillRect(c.x - cameraX, c.y, c.width, c.height);
         }
-
-      // Collision with coins
-      if (
-        player.x < c.x - cameraX + c.width &&
-        player.x + player.width > c.x - cameraX &&
-        player.y < c.y + c.height &&
-        player.y + player.height > c.y
-      ) {
-        c.collected = true;
-        score++;
-        updateScoreDisplay();
+      if (player.x < c.x + c.width && player.x + player.width > c.x &&
+          player.y < c.y + c.height && player.y + player.height > c.y) {
+        c.collected = true; score++; updateScoreDisplay();
       }
     }
   });
@@ -363,73 +384,131 @@ function gameLoop() {
   if (keys.left) player.dx = -player.speed;
   if (keys.right) player.dx = player.speed;
 
-  player.update(); // Update player physics and position
-  player.draw();   // Draw player
+  player.update();
+  player.draw();
 
-  // Check for level completion (all coins collected)
-  if (coins.every(c => c.collected)) {
-    endLevel(true); // Pass true, indicating successful completion
-    return; // Stop the game loop once level is ended
-  }
-
-  requestAnimationFrame(gameLoop); // Continue the loop
+  requestAnimationFrame(gameLoop);
 }
 
-
-function endLevel(completedSuccessfully) {
-  if (gameState === "ended") return; // Prevent multiple calls
-
+function endLevel() {
+  if (gameState === "ended") return;
   gameState = "ended";
-  clearInterval(timerInterval); // Stop the timer
+  clearInterval(timerInterval);
   if (assets.music) assets.music.pause();
 
-  const nextLevelButton = document.getElementById("nextLevelBtn");
-  if (completedSuccessfully) {
-    nextLevelButton.textContent = "Level Cleared! Next?"; // Or some congratulatory message
-  } else {
-    nextLevelButton.textContent = "Time's Up! Retry?"; // Or game over message
-  }
-  nextLevelButton.style.display = "block";
+  // Display "Time's Up!" message or similar on one of the buttons or a new div
+  // For simplicity, we'll use the retry button's text content area or a new message div.
+  // Let's assume you might want a specific message area:
+  // const timeUpMessageDiv = document.getElementById("timeUpMessage"); // You'd add this div to HTML
+  // if(timeUpMessageDiv) timeUpMessageDiv.textContent = "Time's Up!";
 
-  // Handle what happens when the "Next Level" or "Retry" button is clicked
-  nextLevelButton.onclick = () => {
-    if (completedSuccessfully) {
-      // For now, just go back to the main menu as there's no Level 3 defined
-      alert("Congratulations! You finished Level 2!");
-      window.location.href = "../index.html";
-    } else {
-      // If time ran out, reload to retry Level 2
-      location.reload();
-    }
-  };
+  endScreenRetryBtn.textContent = "Retry Level"; // Set text for clarity
+  endScreenRetryBtn.style.display = "block";
+  endScreenMainMenuBtn.style.display = "block";
+
+
+  endScreenRetryBtn.onclick = () => location.reload();
+  endScreenMainMenuBtn.onclick = () => window.location.href = "../index.html";
 }
 
-
-function startGame() {
+function initGame() {
   score = 0;
   updateScoreDisplay();
-  gameState = "playing";
-  document.getElementById("nextLevelBtn").style.display = "none";
+  gameState = "playing"; // Set to playing once assets are loaded and game starts
 
-  // Reset coins
+  // Hide end screen buttons initially
+  endScreenRetryBtn.style.display = "none";
+  endScreenMainMenuBtn.style.display = "none";
+
+
   coins.forEach(c => c.collected = false);
-
-  player.reset(); // Reset player state and position
+  player.reset();
 
   if (assets.music) {
-    assets.music.currentTime = 0; // Ensure music starts from the beginning
+    assets.music.currentTime = 0;
     let playPromise = assets.music.play();
     if (playPromise !== undefined) {
-      playPromise.catch(error => {
-        console.warn("Music autoplay for Level 2 was prevented:", error);
-        // Optionally, provide a UI element for the user to manually start music
-      });
+      playPromise.catch(error => console.warn("Music autoplay for Level 2 was prevented:", error));
     }
   }
-
-  startTimer(); // Start or restart the level timer
-  requestAnimationFrame(gameLoop); // Start the game loop
+  startTimer();
+  requestAnimationFrame(gameLoop);
 }
 
-// Ensure DOM is fully loaded before starting the game
-window.onload = startGame;
+// Count all images (including arrays)
+let assetsLoaded = 0;
+let totalAssets = 0;
+
+// Helper to count all images (including arrays)
+function countAllImages(obj) {
+    for (const key in obj) {
+        if (obj[key] instanceof HTMLImageElement) {
+            totalAssets++;
+        } else if (Array.isArray(obj[key])) {
+            obj[key].forEach(img => {
+                if (img instanceof HTMLImageElement) totalAssets++;
+            });
+        }
+    }
+}
+countAllImages(assets);
+
+// Now assign onload/onerror for all images (including arrays)
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        console.log("All Level 2 assets loaded.");
+        initGame();
+    }
+}
+for (const key in assets) {
+    if (assets[key] instanceof HTMLImageElement) {
+        assets[key].onload = assetLoaded;
+        assets[key].onerror = assetLoaded;
+    } else if (Array.isArray(assets[key])) {
+        assets[key].forEach(img => {
+            if (img instanceof HTMLImageElement) {
+                img.onload = assetLoaded;
+                img.onerror = assetLoaded;
+            }
+        });
+    }
+}
+
+// If an asset has no src (like an unassigned Audio object initially), it won't fire load events.
+// A simple way if not all assets have src initially assigned or are not HTMLImage/Audio:
+// For now, the current loop handles images and audio with src. If you have other asset types, adjust.
+// If an asset object doesn't have a .src (e.g. it's a sub-object like player frames), this simple counter won't work perfectly.
+// The current asset list is flat, so it should mostly work.
+
+// Fallback if some assets don't load or to ensure game starts
+// window.onload is a good general trigger, but asset preloading is better.
+window.onload = () => {
+    // If assets haven't triggered initGame yet (e.g. due to caching or quick loads)
+    // and game state is still 'loading', try to start.
+    // This is a fallback; the assetLoaded counter is preferred.
+    if (gameState === "loading" && assetsLoaded < totalAssets) {
+        console.warn("Window loaded, but not all assets reported loaded. Attempting to start game if critical assets are ready.");
+        // You could add a more robust check here for critical assets like player/background
+        // For now, if the asset counter didn't finish, this will just wait or you can force start.
+        // To be safe, we rely on the assetLoaded counter. If it fails, check console for errors.
+    }
+    // If no assets were defined with src, the counter might not increment.
+    // A simple timeout fallback if assetLoaded isn't robust enough for all cases:
+    setTimeout(() => {
+        if (gameState === "loading") {
+            console.warn("Timeout waiting for assets. Forcing game start attempt.");
+            initGame();
+        }
+    }, 3000); // Start after 3s if assets are still "loading"
+};
+
+// Resize canvas listener
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // You might need to recalculate platformBaseY and other layout elements if they depend on initial canvas.height
+    // For simplicity, current design assumes platformBaseY is relative to initial load height.
+    // If you want dynamic recalculation:
+    // platformBaseY = canvas.height - 40; // And then potentially update all platform/coin/spike y positions
+});
