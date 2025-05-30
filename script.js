@@ -234,7 +234,7 @@ window.addEventListener('load', function () {
                     if (speedBoostTimeout !== null) {
                         clearTimeout(speedBoostTimeout);
                     }
-                    player.speed = player.speed * 1.3 > originalSpeed * 2 ? originalSpeed * 2 : player.speed * 1.3;
+                    player.speed = player.speed * 3.1 > originalSpeed * 2 ? originalSpeed * 2 : player.speed * 1.3;
                     console.log("Speed Boost!", player.speed);
                     speedBoostTimeout = setTimeout(() => {
                         player.speed = originalSpeed;
