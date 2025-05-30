@@ -175,6 +175,10 @@ function coreAssetLoaded() {
         }
     };
 
+    // After player object definition
+    let originalSpeed = player.speed;
+    let speedBoostTimeout = null;
+
     // --- Money Object ---
     const moneyItems = [];
     const moneyProps = {
@@ -212,6 +216,21 @@ function coreAssetLoaded() {
                 moneyItems.splice(i, 1);
                 score++;
                 scoreDisplay.textContent = `Score: ${score}`;
+
+                // --- Speed boost every 5 coins ---
+                if (score % 5 === 0) {
+                    // Always clear previous boost
+                    if (speedBoostTimeout !== null) {
+                        clearTimeout(speedBoostTimeout);
+                        player.speed = originalSpeed;
+                    }
+                    originalSpeed = player.speed;
+                    player.speed = originalSpeed * 1.5;
+                    speedBoostTimeout = setTimeout(() => {
+                        player.speed = originalSpeed;
+                        speedBoostTimeout = null;
+                    }, 5000);
+                }
             }
             // Remove if off screen
             else if (money.y > canvas.height) {
@@ -365,6 +384,13 @@ function coreAssetLoaded() {
             cancelAnimationFrame(animationFrameId);
         }
         gameLoop();
+
+        // --- Reset speed boost on game start ---
+if (speedBoostTimeout) {
+    clearTimeout(speedBoostTimeout);
+    speedBoostTimeout = null;
+    player.speed = originalSpeed;
+}
     }
 
     // Set canvas dimensions for title screen elements as well initially
@@ -390,4 +416,23 @@ function coreAssetLoaded() {
         if(gameState === 'playing') player.jump();
     });
     jumpBtn.addEventListener('touchend', e => { e.preventDefault(); keys.Space = false; });
+
+    // --- Handle window resize ---
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.groundY = canvas.height - player.height - 10;
+        if (player.y > player.groundY) player.y = player.groundY;
+        scaleGameObjects();
+    }
+    function scaleGameObjects() {
+        player.width = Math.max(40, canvas.width * 0.10);
+        player.height = Math.max(50, canvas.height * 0.15);
+        player.groundY = canvas.height - player.height - 10;
+        if (player.y > player.groundY) player.y = player.groundY;
+        moneyProps.width = Math.max(20, canvas.width * 0.05);
+        moneyProps.height = moneyProps.width;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Call once on load
 });
