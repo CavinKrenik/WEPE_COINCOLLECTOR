@@ -51,8 +51,11 @@ html, body {
   pointer-events: none;
 }
 #joystickArea {
-  width: 120px;
-  height: 120px;
+  /* Change from fixed px to vw or a combination for better scaling */
+  width: 25vw;      /* Adjust as needed, e.g., 25% of viewport width */
+  height: 25vw;     /* Keep it square */
+  max-width: 120px; /* Optional: set a max size for larger screens */
+  max-height: 120px;/* Optional: set a max size for larger screens */
   margin-left: 2vw;
   pointer-events: auto;
   touch-action: none;
@@ -78,8 +81,11 @@ html, body {
   transition: left 0.05s, top 0.05s;
 }
 .jump-btn {
-  width: 90px;
-  height: 90px;
+  /* Change from fixed px to vw or a combination */
+  width: 20vw;      /* Adjust as needed */
+  height: 20vw;     /* Keep it square */
+  max-width: 90px;  /* Optional: set a max size for larger screens */
+  max-height: 90px; /* Optional: set a max size for larger screens */
   margin-right: 4vw;
   font-size: 2.5em;
   border-radius: 50%;
