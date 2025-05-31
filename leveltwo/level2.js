@@ -71,7 +71,7 @@ let timer = 120; // 2 minutes
 let gameState = "loading"; // Start with loading state
 let cameraX = 0;
 let timerInterval;
-let totalGameWidth = 12000; // Expanded from 6000
+let totalGameWidth = 24000; // Expanded from 6000
 
 // Player
 const player = {
@@ -404,9 +404,11 @@ function gameLoop() {
       }
     } else if (p.type === 'bridge' && assets.bridge.complete && assets.bridge.naturalHeight !== 0) {
       ctx.drawImage(assets.bridge, p.x - cameraX, p.y, p.width, p.height);
+    } else if (p.type === 'cryptostep' && assets.cryptostep.complete && assets.cryptostep.naturalHeight !== 0) {
+      ctx.drawImage(assets.cryptostep, p.x - cameraX, p.y, p.width, p.height);
     } else if (assets.platform.complete && assets.platform.naturalHeight !== 0) {
       ctx.drawImage(assets.platform, p.x - cameraX, p.y, p.width, p.height);
-    } else { // Fallback for regular platforms
+    } else {
       ctx.fillStyle = "grey";
       ctx.fillRect(p.x - cameraX, p.y, p.width, p.height);
     }
@@ -491,6 +493,61 @@ function endLevel(message = "Level Ended") {
   }
 }
 
+// Add a staircase of cryptostep platforms (right side of the level)
+const stairStartX = 18000;
+const stairStartY = platformBaseY - 40;
+const stairSteps = 15;
+/* stepWidth already declared above; removed duplicate declaration */
+const stepHeight = 30;
+for (let i = 0; i < stairSteps; i++) {
+  platforms.push({
+    x: stairStartX + i * stepWidth,
+    y: stairStartY - i * stepHeight,
+    width: stepWidth,
+    height: stepHeight,
+    type: 'cryptostep'
+  });
+  // Place a coin on each step
+  coins.push({
+    x: stairStartX + i * stepWidth + stepWidth / 2 - coinWidth / 2,
+    y: stairStartY - i * stepHeight - coinHeight - 5,
+    collected: false,
+    width: coinWidth,
+    height: coinHeight
+  });
+}
+
+// Add three staircases of cryptostep platforms
+function addStaircase(startX, startY, steps, up = true) {
+  for (let i = 0; i < steps; i++) {
+    platforms.push({
+      x: startX + i * stepWidth,
+      y: up ? startY - i * stepHeight : startY + i * stepHeight,
+      width: stepWidth,
+      height: stepHeight,
+      type: 'cryptostep'
+    });
+    // Place a coin on each step
+    coins.push({
+      x: startX + i * stepWidth + stepWidth / 2 - coinWidth / 2,
+      y: (up ? startY - i * stepHeight : startY + i * stepHeight) - coinHeight - 5,
+      collected: false,
+      width: coinWidth,
+      height: coinHeight
+    });
+  }
+}
+
+const stepWidth = 80;
+
+// Staircase 1: Near the beginning
+addStaircase(600, platformBaseY - 40, 10, true);
+
+// Staircase 2: Middle of the level
+addStaircase(11000, platformBaseY - 40, 12, true);
+
+// Staircase 3: Near the end
+addStaircase(21000, platformBaseY - 40, 15, true);
 
 function initGame() {
   console.log("initGame: Initializing game state for Level 2...");
@@ -575,6 +632,9 @@ for (const key in assets) {
   }
 }
 
+// New asset for cryptostep
+assets.cryptostep = new Image();
+assets.cryptostep.src = "cryptostep.png";
 
 // Fallback timeout for game start, though asset handlers should cover it.
 const gameStartTimeout = setTimeout(() => {
@@ -603,3 +663,38 @@ window.addEventListener('resize', () => {
 // Ensure script tries to load assets even if window.onload fires early (e.g. cached page)
 // The primary loading is now tied to asset events directly.
 console.log("End of Level 2 script. Asset loading initiated.");
+
+// Helper to place coins in a letter shape
+function placeLetter(letter, startX, startY, scale = 1) {
+  const pixel = 24 * scale; // spacing
+  const patterns = {
+    W: [
+      [0,0],[0,1],[0,2],[0,3],[1,3],[2,2],[3,3],[4,2],[5,3],[6,2],[6,1],[6,0]
+    ],
+    E: [
+      [0,0],[0,1],[0,2],[0,3],[1,0],[2,0],[1,1],[1,2],[1,3],[2,3]
+    ],
+    P: [
+      [0,0],[0,1],[0,2],[0,3],[1,0],[2,0],[2,1],[1,2],[2,2]
+    ]
+  };
+  const coords = patterns[letter];
+  if (!coords) return;
+  coords.forEach(([dx,dy]) => {
+    coins.push({
+      x: startX + dx * pixel,
+      y: startY + dy * pixel,
+      collected: false,
+      width: coinWidth,
+      height: coinHeight
+    });
+  });
+}
+
+// Spell WEPE in the middle of the level
+let letterStartX = 14000;
+let letterStartY = platformBaseY - 400;
+placeLetter('W', letterStartX, letterStartY, 2);
+placeLetter('E', letterStartX + 200, letterStartY, 2);
+placeLetter('P', letterStartX + 350, letterStartY, 2);
+placeLetter('E', letterStartX + 500, letterStartY, 2);
