@@ -75,7 +75,7 @@ let gameState = "loading";
 let cameraX = 0;
 let timerInterval;
 let totalGameWidth = 30000; // Increased game width
-let musicEnabled = true; // MOVED THIS DECLARATION HERE (PREVIOUSLY AT THE END OF THE FILE)
+let musicEnabled = true; // MOVED THIS DECLARATION HERE
 
 if (toggleMusicButton) { // Check if the button exists before adding listener
     toggleMusicButton.onclick = function () {
@@ -581,7 +581,7 @@ function gameLoop() {
       }
     } else if (p.type === 'bridge' && assets.bridge.complete && assets.bridge.naturalHeight !== 0) {
       ctx.drawImage(assets.bridge, p.x - cameraX, p.y, p.width, p.height);
-    } else if (p.type && (p.type.startsWith('greenstep') || p.type.startsWith('redstep'))) { // FIX: Corrected condition here
+    } else if (p.type && (p.type.startsWith('greenstep') || p.type.startsWith('redstep'))) { // FIX: Corrected condition for colored steps
       const img = assets[p.type];
       if (img && img.complete && img.naturalHeight !== 0) {
           ctx.drawImage(img, p.x - cameraX, p.y, p.width, p.height);
@@ -638,7 +638,7 @@ function endGame() {
   // This function is called by endLevel when timer reaches 0 or all coins collected
   // It should primarily handle stopping game processes and cleaning up,
   // letting endLevel handle UI transitions.
-  console.log("endGame called. Current score:", score); // Retain this log
+  console.log("endGame called. Current score:", score);
 
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -721,6 +721,38 @@ function getRandomStepAsset(isGreen, sizeHint) {
   if (asset === assets.redsteplarge) return 'redsteplarge';
   return 'cryptostep';
 }
+
+// NEW FUNCTION: To clear an area of existing objects (coins, platforms, spikes)
+function clearArea(minX, maxX, minY, maxY) {
+    // Filter coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+        const c = coins[i];
+        if (c.x + c.width > minX && c.x < maxX &&
+            c.y + c.height > minY && c.y < maxY) {
+            coins.splice(i, 1);
+        }
+    }
+
+    // Filter platforms (excluding 'ground' type, so you don't remove the main floor)
+    for (let i = platforms.length - 1; i >= 0; i--) {
+        const p = platforms[i];
+        if (p.type !== 'ground' &&
+            p.x + p.width > minX && p.x < maxX &&
+            p.y + p.height > minY && p.y < maxY) {
+            platforms.splice(i, 1);
+        }
+    }
+
+    // Filter spikes
+    for (let i = spikes.length - 1; i >= 0; i--) {
+        const s = spikes[i];
+        if (s.x + s.width > minX && s.x < maxX &&
+            s.y + s.height > minY && s.y < maxY) {
+            spikes.splice(i, 1);
+        }
+    }
+}
+
 
 function addCryptoChartStaircase(startX, startY, numSteps) {
   let currentY = startY;
@@ -929,10 +961,20 @@ function placeLetter(letter, startX, startY, scale = 1) {
   }
 }
 
-// 🟢 Place new centered and spaced W E P E
+// Define the area to clear around WEPE letters for maximum clarity
+// Adjusted for new spacing to ensure sufficient clear zone
+const wepeClearMinX = 12800; // A bit before 'W' starts
+const wepeClearMaxX = 13000 + (3 * 450) + (7 * 1.5 * 30) + 100; // startX + 3*spacing + max letter width + buffer
+const wepeClearMinY = platformBaseY - 550; // Below letters
+const wepeClearMaxY = platformBaseY - 200; // Above ground platforms, encompassing letters
+
+// Step 1: Clear the area of any existing coins, platforms (except ground), or spikes
+clearArea(wepeClearMinX, wepeClearMaxX, wepeClearMinY, wepeClearMaxY);
+
+// Step 2: Place the new centered and spaced W E P E
 let startX = 13000;
 let startY = platformBaseY - 500;
-let spacing = 260;
+let spacing = 450; // FIX: INCREASED SPACING FOR CLARITY BETWEEN LETTERS
 placeLetter('W', startX, startY, 1.5);
 placeLetter('E', startX + spacing, startY, 1.5);
 placeLetter('P', startX + spacing * 2, startY, 1.5);
