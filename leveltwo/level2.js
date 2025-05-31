@@ -90,7 +90,7 @@ let timer = 120;
 let gameState = "loading";
 let cameraX = 0;
 let timerInterval;
-let totalGameWidth = 24000;
+let totalGameWidth = 30000; // Increased game width
 
 // Player
 const player = {
@@ -106,6 +106,8 @@ const player = {
   currentFrame: 0,
   animationTimer: 0,
   animationSpeed: 8,
+  canDoubleJump: true,
+  jumpCount: 0,
   update() {
     this.dy += this.gravity;
     this.x += this.dx;
@@ -132,6 +134,8 @@ const player = {
         this.dy = 0;
         this.onGround = true;
         this.isJumping = false;
+        this.canDoubleJump = true;
+        this.jumpCount = 0;
       }
     });
 
@@ -163,10 +167,17 @@ const player = {
     }
   },
   jump() {
-    if (this.onGround && gameState === "playing") {
+    if (gameState !== "playing") return;
+    if (this.onGround) {
       this.dy = this.jumpPower;
       this.isJumping = true;
       this.onGround = false;
+      this.canDoubleJump = true;
+      this.jumpCount = 1;
+    } else if (this.canDoubleJump && this.jumpCount < 2) {
+      this.dy = this.jumpPower;
+      this.canDoubleJump = false;
+      this.jumpCount = 2;
     }
   },
   reset() {
@@ -232,6 +243,35 @@ const platforms = [
   { x: 10800, y: platformBaseY - 160, width: 180, height: 20, type: 'platform' },
   { x: 11200, y: platformBaseY - 90, width: 150, height: 20, type: 'platform' },
   { x: 11600, y: platformBaseY - 200, width: 200, height: 20, type: 'platform' },
+  // Additional platforms for extended game width
+  { x: 12000, y: platformBaseY - 130, width: 160, height: 20, type: 'platform' },
+  { x: 12400, y: platformBaseY - 180, width: 120, height: 20, type: 'platform' },
+  { x: 12800, y: platformBaseY - 110, width: 200, height: 20, type: 'bridge' },
+  { x: 13500, y: platformBaseY - 200, width: 150, height: 20, type: 'platform' },
+  { x: 14000, y: platformBaseY - 140, width: 100, height: 20, type: 'platform' },
+  { x: 14500, y: platformBaseY - 250, width: 180, height: 20, type: 'platform' },
+  { x: 15200, y: platformBaseY - 160, width: 120, height: 20, type: 'platform' },
+  { x: 15800, y: platformBaseY - 90, width: 150, height: 20, type: 'platform' },
+  { x: 16400, y: platformBaseY - 210, width: 200, height: 20, type: 'platform' },
+  { x: 17000, y: platformBaseY - 100, width: 100, height: 20, type: 'platform' },
+  { x: 17500, y: platformBaseY - 170, width: 130, height: 20, type: 'platform' },
+  { x: 18000, y: platformBaseY - 230, width: 180, height: 20, type: 'platform' },
+  { x: 18700, y: platformBaseY - 120, width: 150, height: 20, type: 'platform' },
+  { x: 19300, y: platformBaseY - 190, width: 100, height: 20, type: 'platform' },
+  { x: 20000, y: platformBaseY - 150, width: 200, height: 20, type: 'bridge' },
+  { x: 20700, y: platformBaseY - 200, width: 120, height: 20, type: 'platform' },
+  { x: 21400, y: platformBaseY - 130, width: 180, height: 20, type: 'platform' },
+  { x: 22100, y: platformBaseY - 240, width: 150, height: 20, type: 'platform' },
+  { x: 22800, y: platformBaseY - 160, width: 100, height: 20, type: 'platform' },
+  { x: 23500, y: platformBaseY - 90, width: 120, height: 20, type: 'platform' },
+  { x: 24200, y: platformBaseY - 200, width: 180, height: 20, type: 'platform' },
+  { x: 24900, y: platformBaseY - 140, width: 150, height: 20, type: 'platform' },
+  { x: 25600, y: platformBaseY - 210, width: 100, height: 20, type: 'platform' },
+  { x: 26300, y: platformBaseY - 100, width: 200, height: 20, type: 'bridge' },
+  { x: 27000, y: platformBaseY - 170, width: 120, height: 20, type: 'platform' },
+  { x: 27700, y: platformBaseY - 230, width: 150, height: 20, type: 'platform' },
+  { x: 28400, y: platformBaseY - 150, width: 180, height: 20, type: 'platform' },
+  { x: 29100, y: platformBaseY - 80, width: 100, height: 20, type: 'platform' },
 ];
 
 const coins = [
@@ -265,6 +305,29 @@ const coins = [
   { x: 10500, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
   { x: 11250, y: platformBaseY - 90 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
   { x: 11800, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  // Additional coins for extended game width (placed on new platforms or general ground)
+  { x: 12050, y: platformBaseY - 130 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 12450, y: platformBaseY - 180 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 12850, y: platformBaseY - 110 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 13600, y: platformBaseY - 200 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 14600, y: platformBaseY - 250 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 15300, y: platformBaseY - 160 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 16000, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 16500, y: platformBaseY - 210 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 17600, y: platformBaseY - 170 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 18100, y: platformBaseY - 230 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 19000, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 20100, y: platformBaseY - 150 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 21500, y: platformBaseY - 240 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 22900, y: platformBaseY - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 23600, y: platformBaseY - 90 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 24300, y: platformBaseY - 200 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 25000, y: platformBaseY - 140 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 26400, y: platformBaseY - 100 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 27100, y: platformBaseY - 170 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 27800, y: platformBaseY - 230 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 28500, y: platformBaseY - 150 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
+  { x: 29200, y: platformBaseY - 80 - coinHeight, collected: false, width: coinWidth, height: coinHeight },
 ];
 
 const spikes = [
@@ -284,6 +347,25 @@ const spikes = [
   { x: 10200, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
   { x: 10850, y: platformBaseY - 160 - spikeHeight, width: 40, height: spikeHeight },
   { x: 11500, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  // Additional spikes for extended game width
+  { x: 12200, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 12900, y: platformBaseY - 110 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 13800, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 14700, y: platformBaseY - 250 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 15500, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 16600, y: platformBaseY - 210 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 17700, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 18200, y: platformBaseY - 230 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 19200, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 20200, y: platformBaseY - 150 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 21300, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 22200, y: platformBaseY - 240 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 23400, y: platformBaseY - spikeHeight, width: 40, height: spikeHeight },
+  { x: 24100, y: platformBaseY - 200 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 25100, y: platformBaseY - 140 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 26500, y: platformBaseY - 100 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 27900, y: platformBaseY - 230 - spikeHeight, width: 40, height: spikeHeight },
+  { x: 29000, y: platformBaseY - 80 - spikeHeight, width: 40, height: spikeHeight },
 ];
 
 const scenery = [
@@ -301,6 +383,22 @@ const scenery = [
   { asset: assets.bushBig, x: 9900, yOffset: assets.bushBig.height },
   { asset: assets.blockEmpty, x: 10500, yOffset: 60, yAnchor: platformBaseY - 250 },
   { asset: assets.bushSmall, x: 11300, yOffset: assets.bushSmall.height },
+  // ADDED SCENERY for expanded width
+  { asset: assets.bushBig, x: 12500, yOffset: assets.bushBig.height },
+  { asset: assets.blockEmpty, x: 13500, yOffset: 40, yAnchor: platformBaseY - 100 },
+  { asset: assets.bushSmall, x: 14800, yOffset: assets.bushSmall.height },
+  { asset: assets.bushBig, x: 15900, yOffset: assets.bushBig.height },
+  { asset: assets.blockEmpty, x: 16500, yOffset: 50, yAnchor: platformBaseY - 220 },
+  { asset: assets.bushSmall, x: 17800, yOffset: assets.bushSmall.height },
+  { asset: assets.bushBig, x: 18900, yOffset: assets.bushBig.height },
+  { asset: assets.blockEmpty, x: 19500, yOffset: 60, yAnchor: platformBaseY - 150 },
+  { asset: assets.bushSmall, x: 20500, yOffset: assets.bushSmall.height },
+  { asset: assets.bushBig, x: 22000, yOffset: assets.bushBig.height },
+  { asset: assets.blockEmpty, x: 23000, yOffset: 45, yAnchor: platformBaseY - 120 },
+  { asset: assets.bushSmall, x: 24500, yOffset: assets.bushSmall.height },
+  { asset: assets.bushBig, x: 26000, yOffset: assets.bushBig.height },
+  { asset: assets.blockEmpty, x: 27500, yOffset: 55, yAnchor: platformBaseY - 180 },
+  { asset: assets.bushSmall, x: 28800, yOffset: assets.bushSmall.height },
 ];
 
 
@@ -577,10 +675,13 @@ function addCryptoChartStaircase(startX, startY, numSteps) {
 }
 
 addCryptoChartStaircase(600, platformBaseY - 100, 15);
-
 addCryptoChartStaircase(11000, platformBaseY - 150, 20);
-
 addCryptoChartStaircase(21000, platformBaseY - 200, 25);
+// ADDED addCryptoChartStaircase calls for expanded game width
+addCryptoChartStaircase(7000, platformBaseY - 80, 10); // Shorter staircase earlier
+addCryptoChartStaircase(14000, platformBaseY - 220, 20); // Mid-game challenge
+addCryptoChartStaircase(18000, platformBaseY - 100, 15); // Another mid-game staircase
+addCryptoChartStaircase(23000, platformBaseY - 170, 20); // Towards the end
 
 
 function initGame() {

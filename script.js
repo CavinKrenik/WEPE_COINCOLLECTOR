@@ -123,6 +123,7 @@ window.addEventListener('load', function () {
         gravity: 0.8,
         jumpPower: -15,
         isJumping: false,
+        canDoubleJump: true,
         groundY: canvas.height - playerBaseHeight - (canvas.height * 0.12),
         currentFrame: 0,
         animationTimer: 0,
@@ -149,6 +150,16 @@ window.addEventListener('load', function () {
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
         },
+        jump() {
+            if (!this.isJumping) {
+                this.dy = this.jumpPower;
+                this.isJumping = true;
+                this.canDoubleJump = true;
+            } else if (this.canDoubleJump) {
+                this.dy = this.jumpPower;
+                this.canDoubleJump = false;
+            }
+        },
         update() {
             this.x += this.dx;
 
@@ -170,6 +181,7 @@ window.addEventListener('load', function () {
                     this.y = this.groundY;
                     this.isJumping = false;
                     this.dy = 0;
+                    this.canDoubleJump = true; // Reset double jump when landing
                 }
             }
 
@@ -178,12 +190,6 @@ window.addEventListener('load', function () {
                 this.x = canvas.width;
             } else if (this.x > canvas.width) {
                 this.x = -this.width;
-            }
-        },
-        jump() {
-            if (!this.isJumping && gameState === 'playing') {
-                this.isJumping = true;
-                this.dy = this.jumpPower;
             }
         }
     };
@@ -284,8 +290,7 @@ window.addEventListener('load', function () {
             if (e.code === "ArrowLeft") keys.ArrowLeft = true;
             if (e.code === "ArrowRight") keys.ArrowRight = true;
             if (e.code === "Space") {
-                keys.Space = true;
-                player.jump();
+                player.jump(); // Always call jump on space
             }
             if (e.code === "Space" || e.code.startsWith("Arrow")) {
                 e.preventDefault(); // Prevent page scrolling
@@ -331,14 +336,7 @@ window.addEventListener('load', function () {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        processInputForMovement();
-        player.update();
-        player.draw();
-
-        updateMoney();
-        drawMoney();
-
-        // Draw chart steps (candlestick chart)
+        // Draw chart steps (candlestick chart) - MOVED TO BE BEHIND PLAYER
         chartSteps.forEach(step => {
             const img = step.color === 'green' ? assets.greensteplarge : assets.redsteplarge;
             if (img && img.complete && img.naturalHeight !== 0) {
@@ -348,6 +346,13 @@ window.addEventListener('load', function () {
                 ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
             }
         });
+
+        processInputForMovement();
+        player.update();
+        player.draw();
+
+        updateMoney();
+        drawMoney();
 
         animationFrameId = requestAnimationFrame(gameLoop);
     }
@@ -540,12 +545,12 @@ window.addEventListener('load', function () {
     window.addEventListener('resize', resizeCanvas);
 
     // --- Timer ---
-    let timer = 120; // seconds
+    let timer = 60; // seconds
     let timerInterval = null;
 
     function startTimer() {
         console.log("startTimer called");
-        timer = 120; // Reset timer duration
+        timer = 60; // Reset timer duration
         updateTimerDisplay();
         if (timerInterval) {
             clearInterval(timerInterval); // Clear existing interval
@@ -673,52 +678,6 @@ window.addEventListener('load', function () {
         } else {
             chartCurrentY += chartStepHeight / 2;
         }
-    }
-
-    function drawChart() {
-        chartSteps.forEach(step => {
-            ctx.fillStyle = step.color;
-            ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
-        });
-    }
-
-    // Call this function with `true` or `false` based on game events, e.g., scoring or getting hit
-    // Example: addChartStep(true); // Call this when the player successfully collects money
-    // Example: addChartStep(false); // Call this when the player misses a jump or collides
-
-    // Integrate chart drawing into the game loop
-    function gameLoop() {
-        if (gameState !== 'playing') return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw background
-        if (assets.background && assets.background.complete && assets.background.naturalHeight !== 0) {
-            ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
-        } else {
-            ctx.fillStyle = '#87CEEB'; // Fallback background
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        processInputForMovement();
-        player.update();
-        player.draw();
-
-        updateMoney();
-        drawMoney();
-
-        // Draw chart steps (candlestick chart)
-        chartSteps.forEach(step => {
-            const img = step.color === 'green' ? assets.greensteplarge : assets.redsteplarge;
-            if (img && img.complete && img.naturalHeight !== 0) {
-                ctx.drawImage(img, step.x, step.y, chartStepWidth, chartStepHeight);
-            } else {
-                ctx.fillStyle = step.color === 'green' ? 'green' : 'red';
-                ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
-            }
-        });
-
-        animationFrameId = requestAnimationFrame(gameLoop);
     }
 
     // Drop a green step for collected coin
