@@ -75,7 +75,7 @@ let gameState = "loading";
 let cameraX = 0;
 let timerInterval;
 let totalGameWidth = 30000; // Increased game width
-let musicEnabled = true; // Moved this declaration here
+let musicEnabled = true; // MOVED THIS DECLARATION HERE (WAS AT THE END OF THE FILE)
 
 if (toggleMusicButton) { // Check if the button exists before adding listener
     toggleMusicButton.onclick = function () {
