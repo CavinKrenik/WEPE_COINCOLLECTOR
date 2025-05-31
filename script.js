@@ -334,6 +334,17 @@ window.addEventListener('load', function () {
         updateMoney();
         drawMoney();
 
+        // Draw chart steps (candlestick chart)
+        chartSteps.forEach(step => {
+            const img = step.color === 'green' ? assets.greensteplarge : assets.redsteplarge;
+            if (img && img.complete && img.naturalHeight !== 0) {
+                ctx.drawImage(img, step.x, step.y, chartStepWidth, chartStepHeight);
+            } else {
+                ctx.fillStyle = step.color === 'green' ? 'green' : 'red';
+                ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
+            }
+        });
+
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
@@ -631,4 +642,98 @@ window.addEventListener('load', function () {
         // Set initial button text
         toggleMusicButton.textContent = bgMusic.paused ? "Play Music" : "Pause Music";
     }
+
+    // --- Charting (NEW FEATURE) ---
+    const chartSteps = []; // Each entry: { x, y, color: 'green'|'red' }
+    const chartStepWidth = 40; // Adjust as needed
+    const chartStepHeight = 80; // Adjust as needed
+    const chartBaseY = canvas.height - chartStepHeight - 10; // 10px above bottom
+    let chartCurrentX = 0;
+    let chartCurrentY = chartBaseY;
+
+    function addChartStep(isGreen) {
+        chartSteps.push({
+            x: chartCurrentX,
+            y: chartCurrentY,
+            color: isGreen ? 'green' : 'red'
+        });
+        chartCurrentX += chartStepWidth;
+        // Move up for green, down for red
+        if (isGreen) {
+            chartCurrentY -= chartStepHeight / 2;
+        } else {
+            chartCurrentY += chartStepHeight / 2;
+        }
+    }
+
+    function drawChart() {
+        chartSteps.forEach(step => {
+            ctx.fillStyle = step.color;
+            ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
+        });
+    }
+
+    // Call this function with `true` or `false` based on game events, e.g., scoring or getting hit
+    // Example: addChartStep(true); // Call this when the player successfully collects money
+    // Example: addChartStep(false); // Call this when the player misses a jump or collides
+
+    // Integrate chart drawing into the game loop
+    function gameLoop() {
+        if (gameState !== 'playing') return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw background
+        if (assets.background && assets.background.complete && assets.background.naturalHeight !== 0) {
+            ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#87CEEB'; // Fallback background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        processInputForMovement();
+        player.update();
+        player.draw();
+
+        updateMoney();
+        drawMoney();
+
+        // Draw chart steps (candlestick chart)
+        chartSteps.forEach(step => {
+            const img = step.color === 'green' ? assets.greensteplarge : assets.redsteplarge;
+            if (img && img.complete && img.naturalHeight !== 0) {
+                ctx.drawImage(img, step.x, step.y, chartStepWidth, chartStepHeight);
+            } else {
+                ctx.fillStyle = step.color === 'green' ? 'green' : 'red';
+                ctx.fillRect(step.x, step.y, chartStepWidth, chartStepHeight);
+            }
+        });
+
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    // Drop a green step for collected coin
+    chartSteps.push({
+        x: chartCurrentX,
+        y: chartCurrentY - chartStepHeight / 2, // Up by half step
+        color: 'green'
+    });
+    chartCurrentX += chartStepWidth;
+    chartCurrentY -= chartStepHeight / 2;
+
+    // Drop a red step for missed coin
+    chartSteps.push({
+        x: chartCurrentX,
+        y: chartCurrentY + chartStepHeight / 2, // Down by half step
+        color: 'red'
+    });
+    chartCurrentX += chartStepWidth;
+    chartCurrentY += chartStepHeight / 2;
+
+    chartSteps.length = 0;
+    chartCurrentX = 0;
+    chartCurrentY = chartBaseY;
+
+    addChartStep(true); // Green step for collected coin
+    addChartStep(false); // Red step for missed coin
 });
