@@ -1,3 +1,5 @@
+let animationFrameId; // DECLARE GLOBALLY HERE
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
@@ -625,7 +627,7 @@ function gameLoop() {
   player.update();
   player.draw();
 
-  requestAnimationFrame(gameLoop);
+  animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 function endGame() {
@@ -667,8 +669,10 @@ function endLevel(message = "Level Ended") {
       window.location.href = "../index.html"; // Go back to main menu if they don't want to proceed
     }
   } else {
-    // This else block would handle other level ending conditions, if any,
-    // or if the user simply "loses" without time running out or collecting all coins.
+    // This else block would typically be for other win conditions that are not "all coins collected"
+    // or if there are scenarios where the level ends without all coins or time running out.
+    // Given the current logic, this part might only be reached if a custom 'message' is passed
+    // that isn't 'Time's Up!' and not all coins are collected.
     alert(message + " - Try Again?");
     pauseMenu.style.display = "flex";
     if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "none";
@@ -804,7 +808,7 @@ function initGame() {
     }
   }
   startTimer();
-  requestAnimationFrame(gameLoop);
+  animationFrameId = requestAnimationFrame(gameLoop);
   console.log("initGame: Level 2 started.");
 }
 
