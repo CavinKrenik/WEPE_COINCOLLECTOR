@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WEPE Coin Collector - Level 3</title>
+    <link rel="stylesheet" href="level3.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="timerDisplay">Time: 2:00</div>
+        <div id="pauseMenu" style="display:none;">
+            <div>Game Paused</div>
+            <button id="resumeButton">Resume</button>
+            <button id="retryButton">Retry Level</button>
+            <button id="mainMenuButton">Main Menu</button>
+            <button id="toggleMusicButton">Toggle Music</button>
+        </div>
+        <div id="touchControls">
+            <div id="joystickArea">
+                <div id="joystickBase">
+                    <div id="joystickKnob"></div>
+                </div>
+            </div>
+            <button id="boostBtn" class="boost-btn">BOOST</button>
+        </div>
+    </div>
+    <script src="level3.js"></script>
+</body>
+</html>
