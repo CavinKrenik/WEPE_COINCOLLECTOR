@@ -243,10 +243,14 @@ window.addEventListener('load', function () {
                         console.log("Speed normal.", player.speed);
                     }, 3000); // 3 second boost
                 }
+
+                // Add chart step for collected coin
+                addChartStep(true);
             }
             // Remove money if it goes off screen
             else if (money.y > canvas.height) {
                 moneyItems.splice(i, 1);
+                addChartStep(false); // Add red step for missed coin
             }
         }
     }
@@ -457,6 +461,11 @@ window.addEventListener('load', function () {
             cancelAnimationFrame(animationFrameId);
         }
         animationFrameId = requestAnimationFrame(gameLoop);
+
+        // Reset chart steps for new game
+        chartSteps.length = 0;
+        chartCurrentX = 0;
+        chartCurrentY = chartBaseY;
     }
 
     // Event listeners for pause menu buttons
