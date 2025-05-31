@@ -660,13 +660,9 @@ function endLevel(message = "Level Ended") {
   // Removed nextLevelBtn variable as it's no longer directly used for navigation logic here
 
   if (message === "Time's Up!") {
-    // Show score and ask to restart or go to main menu
-    const restart = window.confirm(`Time's Up!\nYour Score: ${score}\n\nRestart level? (Cancel for Main Menu)`);
-    if (restart) {
-      location.reload();
-    } else {
-      window.location.href = "../index.html";
-    }
+    // Transition to Level 3 when time runs out
+    alert(`Time's Up!\nYour Score: ${score}\nProceeding to Level 3...`);
+    window.location.href = "../levelthree/level3.html";
     return;
   }
 
