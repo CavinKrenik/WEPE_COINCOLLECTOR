@@ -14,6 +14,7 @@ window.addEventListener('load', function () {
     const pauseViewHighscoresButton = document.getElementById('pauseViewHighscoresButton');
     const viewHighscoresButton = document.getElementById('viewHighscoresButton'); // For title screen
     const touchControlsDiv = document.getElementById('touchControls');
+    const bgMusic = document.getElementById('bgMusic');
 
     // --- Game Configuration ---
     canvas.width = 800; // Default, will be resized
@@ -382,6 +383,12 @@ window.addEventListener('load', function () {
         titleScreenDiv.style.display = 'flex';
         if (viewHighscoresButton) viewHighscoresButton.style.display = 'block'; // Show title screen high score button
 
+        if (bgMusic) {
+            bgMusic.volume = 0.5; // Optional: set volume
+            bgMusic.currentTime = 0;
+            bgMusic.play();
+        }
+
         gameState = 'title';
         console.log("gameState changed to 'title'");
     }
@@ -428,6 +435,12 @@ window.addEventListener('load', function () {
         console.log("gameState changed to 'playing'");
 
         startTimer();
+
+        if (bgMusic) {
+            bgMusic.volume = 0.5;
+            bgMusic.currentTime = 0;
+            bgMusic.play();
+        }
 
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -563,6 +576,11 @@ window.addEventListener('load', function () {
 
         // Automatically transition to Level 2 (IMMEDIATE)
         window.location.href = "leveltwo/level2.html";
+
+        if (bgMusic) {
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+        }
     }
 
     function showHighscores(askRetry = false) {
