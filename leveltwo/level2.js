@@ -417,12 +417,6 @@ window.addEventListener("keyup", e => {
   if (e.code === "ArrowRight") keys.right = false;
 });
 
-// REMOVED THE FOLLOWING LINES THAT REFERENCE leftBtn and rightBtn in previous turn.
-// document.getElementById("leftBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.left = true; });
-// document.getElementById("leftBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.left = false; });
-// document.getElementById("rightBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.right = true; });
-// document.getElementById("rightBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.right = false; });
-
 const joystickArea = document.getElementById('joystickArea');
 const joystickBase = document.getElementById('joystickBase');
 const joystickKnob = document.getElementById('joystickKnob');
@@ -663,7 +657,7 @@ function endLevel(message = "Level Ended") {
   endGame();
 
   const allCoinsCollected = coins.every(c => c.collected);
-  const nextLevelBtn = document.getElementById("nextLevelBtn");
+  // Removed nextLevelBtn variable as it's no longer directly used for navigation logic here
 
   if (message === "Time's Up!") {
     // Show score and ask to restart or go to main menu
@@ -676,24 +670,20 @@ function endLevel(message = "Level Ended") {
     return;
   }
 
-  if (nextLevelBtn) {
-    if (!allCoinsCollected) {
-      pauseMenu.children[0].textContent = message + (allCoinsCollected ? " - All Coins!" : " - Try Again?");
-      pauseMenu.style.display = "flex";
-      if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "none";
-      if (document.getElementById("retryButton")) document.getElementById("retryButton").style.display = "block";
-      if (document.getElementById("mainMenuButton")) document.getElementById("mainMenuButton").style.display = "block";
-    } else if (allCoinsCollected) {
-      nextLevelBtn.textContent = "You Win! (Next coming soon)";
-      nextLevelBtn.style.display = "block";
-      nextLevelBtn.onclick = () => {
-        alert("Congratulations! Next level isn't ready yet.");
-      };
-    }
+  // If all coins are collected, transition to Level 3
+  if (allCoinsCollected) {
+    console.log("All coins collected! Transitioning to Level 3.");
+    window.location.href = "../levelthree/level3.html"; // Redirect to Level 3
   } else {
-    alert(message + (allCoinsCollected ? " - All Coins Collected!" : ""));
+    // This else block would typically be for other win conditions that are not "all coins collected"
+    // or if there are scenarios where the level ends without all coins or time running out.
+    // Given the current logic, this part might only be reached if a custom 'message' is passed
+    // that isn't 'Time's Up!' and not all coins are collected.
+    alert(message + " - Try Again?");
     pauseMenu.style.display = "flex";
     if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "none";
+    if (document.getElementById("retryButton")) document.getElementById("retryButton").style.display = "block";
+    if (document.getElementById("mainMenuButton")) document.getElementById("mainMenuButton").style.display = "block";
   }
 }
 
