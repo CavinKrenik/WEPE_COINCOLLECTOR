@@ -654,27 +654,21 @@ function endLevel(message = "Level Ended") {
   if (gameState === "ended") return;
   console.log("endLevel called with message:", message);
   gameState = "ended";
-  endGame();
+  endGame(); // Stop game processes
 
   const allCoinsCollected = coins.every(c => c.collected);
-  // Removed nextLevelBtn variable as it's no longer directly used for navigation logic here
 
-  if (message === "Time's Up!") {
-    // Transition to Level 3 when time runs out
-    alert(`Time's Up!\nYour Score: ${score}\nProceeding to Level 3...`);
-    window.location.href = "../levelthree/level3.html";
-    return;
-  }
-
-  // If all coins are collected, transition to Level 3
-  if (allCoinsCollected) {
-    console.log("All coins collected! Transitioning to Level 3.");
-    window.location.href = "../levelthree/level3.html"; // Redirect to Level 3
+  if (message === "Time's Up!" || allCoinsCollected) { //
+    // Both time's up and all coins collected lead to this prompt
+    const proceed = window.confirm(`${message}\nYour Score: ${score}\n\nProceed to Level 3?`); //
+    if (proceed) {
+      window.location.href = "../Level3/Assets/level3.html"; // Corrected path to Level 3 HTML
+    } else {
+      window.location.href = "../index.html"; // Go back to main menu if they don't want to proceed
+    }
   } else {
-    // This else block would typically be for other win conditions that are not "all coins collected"
-    // or if there are scenarios where the level ends without all coins or time running out.
-    // Given the current logic, this part might only be reached if a custom 'message' is passed
-    // that isn't 'Time's Up!' and not all coins are collected.
+    // This else block would handle other level ending conditions, if any,
+    // or if the user simply "loses" without time running out or collecting all coins.
     alert(message + " - Try Again?");
     pauseMenu.style.display = "flex";
     if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "none";
