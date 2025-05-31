@@ -31,36 +31,35 @@ const assets = {
 
 console.log("Initializing asset loading for Level 2...");
 
-// --- IMPORTANT: Asset file paths adjusted for parent directory access ---
-assets.bg.src = "level2background.gif"; // This is specific to leveltwo
-assets.playerLeft[0].src = "../Left.png";
-assets.playerLeft[1].src = "../left1.png";
-assets.playerRight[0].src = "../right.png";
-assets.playerRight[1].src = "../right1.png";
-assets.playerJumpLeft.src = "../jumpleft.png";
-assets.playerJumpRight.src = "../jumpright.png";
-assets.platform.src = "../Platform.png";
-assets.coin.src = "../btc.png";
-assets.bushBig.src = "../Big_Bush.png";
-assets.bushSmall.src = "../Small_Bush.png";
-assets.spikes.src = "../Spikes.png";
+// ✅ All paths adjusted for current directory (no ../)
+assets.bg.src = "level2background.gif";
+assets.playerLeft[0].src = "Left.png";
+assets.playerLeft[1].src = "left1.png";
+assets.playerRight[0].src = "right.png";
+assets.playerRight[1].src = "right1.png";
+assets.playerJumpLeft.src = "jumpleft.png";
+assets.playerJumpRight.src = "jumpright.png";
+assets.platform.src = "Platform.png";
+assets.coin.src = "btc.png";
+assets.bushBig.src = "Big_Bush.png";
+assets.bushSmall.src = "Small_Bush.png";
+assets.spikes.src = "Spikes.png";
+assets.dirt.src = "Dirt_Block.png";
+assets.grass.src = "Grass_Block.png";
+assets.bridge.src = "Bridge.png";
+assets.blockEmpty.src = "Empty_Brown_Block.png";
+assets.cryptostep.src = "cryptostep.png";
+assets.greenstepsmall.src = "greenstepsmall.png";
+assets.greenstepmedium.src = "greenstepmedium.png";
+assets.greensteplarge.src = "greensteplarge.png";
+assets.redstepsmall.src = "redstepsmall.png";
+assets.redstepmedium.src = "redstepmedium.png";
+assets.redsteplarge.src = "redsteplarge.png";
 
-assets.dirt.src = "../dirt.png";
-assets.grass.src = "../grass.png";
-assets.bridge.src = "../bridge.png";
-assets.blockEmpty.src = "../blockempty.png";
-assets.cryptostep.src = "../cryptostep.png";
-
-assets.greenstepsmall.src = "../greenstepsmall.png";
-assets.greenstepmedium.src = "../greenstepmedium.png";
-assets.greensteplarge.src = "../greensteplarge.png";
-assets.redstepsmall.src = "../redstepsmall.png";
-assets.redstepmedium.src = "../redstepmedium.png";
-assets.redsteplarge.src = "../redsteplarge.png";
-
-assets.music.src = "Fast Desert Theme.wav"; // This is specific to leveltwo
+assets.music.src = "Fast Desert Theme.wav";
 assets.music.loop = true;
 assets.music.volume = 0.5;
+
 
 // UI Elements from HTML
 const pauseMenu = document.getElementById("pauseMenu");
@@ -69,22 +68,21 @@ const retryButton = document.getElementById("retryButton");
 const mainMenuButton = document.getElementById("mainMenuButton");
 const toggleMusicButton = document.getElementById("toggleMusicButton");
 
-toggleMusicButton.onclick = function () {
-    if (assets.music.paused) {
-        assets.music.play();
-        toggleMusicButton.textContent = "Pause Music";
-    } else {
-        assets.music.pause();
-        toggleMusicButton.textContent = "Play Music";
-    }
-};
-
-// Optional: Set initial button text based on music state
-if (assets.music.paused) {
-    toggleMusicButton.textContent = "Play Music";
-} else {
-    toggleMusicButton.textContent = "Pause Music";
+if (toggleMusicButton) { // Check if the button exists before adding listener
+    toggleMusicButton.onclick = function () {
+        musicEnabled = !musicEnabled;
+        if (musicEnabled) {
+            assets.music.play();
+            toggleMusicButton.textContent = "Pause Music";
+        } else {
+            assets.music.pause();
+            toggleMusicButton.textContent = "Play Music";
+        }
+    };
+    // Set initial button text
+    toggleMusicButton.textContent = assets.music.paused ? "Play Music" : "Pause Music";
 }
+
 
 // Game state
 let score = 0;
@@ -192,48 +190,48 @@ const spikeHeight = 20;
 const platforms = [
   // Main ground platform - type 'ground' for special rendering
   { x: 0, y: platformBaseY, width: totalGameWidth, height: 40, type: 'ground' },
-  // Original platforms (consider replacing these with crypto steps later if desired)
-  { x: 300, y: platformBaseY - 140, width: 120, height: 20 },
-  { x: 500, y: platformBaseY - 210, width: 120, height: 20 },
-  { x: 700, y: platformBaseY - 140, width: 120, height: 20 },
-  { x: 1000, y: platformBaseY - 180, width: 120, height: 20 },
-  { x: 1400, y: platformBaseY - 140, width: 120, height: 20 },
-  { x: 1700, y: platformBaseY - 100, width: 150, height: 20 },
-  { x: 1900, y: platformBaseY - 200, width: 100, height: 20 },
-  { x: 2100, y: platformBaseY - 150, width: 120, height: 20 },
-  { x: 2350, y: platformBaseY - 120, width: 180, height: 20 },
-  { x: 2600, y: platformBaseY - 220, width: 100, height: 20 },
-  { x: 2800, y: platformBaseY - 100, width: 150, height: 20 },
-  { x: 3050, y: platformBaseY - 180, width: 120, height: 20 },
-  { x: 3300, y: platformBaseY - 130, width: 200, height: 20 },
-  { x: 3600, y: platformBaseY - 200, width: 100, height: 20 },
-  { x: 3800, y: platformBaseY - 100, width: 150, height: 20 },
-  { x: 4050, y: platformBaseY - 160, width: 120, height: 20 },
-  { x: 4300, y: platformBaseY - 120, width: 180, height: 20 },
-  { x: 4550, y: platformBaseY - 210, width: 100, height: 20 },
-  { x: 4800, y: platformBaseY - 100, width: 150, height: 20 },
-  { x: 5000, y: platformBaseY - 170, width: 200, height: 20 },
-  { x: 5300, y: platformBaseY - 150, width: 150, height: 20 },
-  { x: 5550, y: platformBaseY - 100, width: 100, height: 20 },
-  { x: 5800, y: platformBaseY - 180, width: 180, height: 20 },
+  // Original platforms (add type: 'platform' to all generic ones)
+  { x: 300, y: platformBaseY - 140, width: 120, height: 20, type: 'platform' },
+  { x: 500, y: platformBaseY - 210, width: 120, height: 20, type: 'platform' },
+  { x: 700, y: platformBaseY - 140, width: 120, height: 20, type: 'platform' },
+  { x: 1000, y: platformBaseY - 180, width: 120, height: 20, type: 'platform' },
+  { x: 1400, y: platformBaseY - 140, width: 120, height: 20, type: 'platform' },
+  { x: 1700, y: platformBaseY - 100, width: 150, height: 20, type: 'platform' },
+  { x: 1900, y: platformBaseY - 200, width: 100, height: 20, type: 'platform' },
+  { x: 2100, y: platformBaseY - 150, width: 120, height: 20, type: 'platform' },
+  { x: 2350, y: platformBaseY - 120, width: 180, height: 20, type: 'platform' },
+  { x: 2600, y: platformBaseY - 220, width: 100, height: 20, type: 'platform' },
+  { x: 2800, y: platformBaseY - 100, width: 150, height: 20, type: 'platform' },
+  { x: 3050, y: platformBaseY - 180, width: 120, height: 20, type: 'platform' },
+  { x: 3300, y: platformBaseY - 130, width: 200, height: 20, type: 'platform' },
+  { x: 3600, y: platformBaseY - 200, width: 100, height: 20, type: 'platform' },
+  { x: 3800, y: platformBaseY - 100, width: 150, height: 20, type: 'platform' },
+  { x: 4050, y: platformBaseY - 160, width: 120, height: 20, type: 'platform' },
+  { x: 4300, y: platformBaseY - 120, width: 180, height: 20, type: 'platform' },
+  { x: 4550, y: platformBaseY - 210, width: 100, height: 20, type: 'platform' },
+  { x: 4800, y: platformBaseY - 100, width: 150, height: 20, type: 'platform' },
+  { x: 5000, y: platformBaseY - 170, width: 200, height: 20, type: 'platform' },
+  { x: 5300, y: platformBaseY - 150, width: 150, height: 20, type: 'platform' },
+  { x: 5550, y: platformBaseY - 100, width: 100, height: 20, type: 'platform' },
+  { x: 5800, y: platformBaseY - 180, width: 180, height: 20, type: 'platform' },
 
   // Expanded level platforms (6000 to 12000)
-  { x: 6200, y: platformBaseY - 150, width: 150, height: 20 },
+  { x: 6200, y: platformBaseY - 150, width: 150, height: 20, type: 'platform' },
   { x: 6500, y: platformBaseY - 100, width: 200, height: 20, type: 'bridge' },
-  { x: 6800, y: platformBaseY - 200, width: 100, height: 20 },
-  { x: 7100, y: platformBaseY - 120, width: 180, height: 20 },
-  { x: 7400, y: platformBaseY - 250, width: 120, height: 20 },
-  { x: 7800, y: platformBaseY - 100, width: 150, height: 20 },
-  { x: 8200, y: platformBaseY - 180, width: 200, height: 20 },
-  { x: 8500, y: platformBaseY - 80, width: 100, height: 20 },
-  { x: 8900, y: platformBaseY - 220, width: 150, height: 20 },
-  { x: 9300, y: platformBaseY - 140, width: 120, height: 20 },
+  { x: 6800, y: platformBaseY - 200, width: 100, height: 20, type: 'platform' },
+  { x: 7100, y: platformBaseY - 120, width: 180, height: 20, type: 'platform' },
+  { x: 7400, y: platformBaseY - 250, width: 120, height: 20, type: 'platform' },
+  { x: 7800, y: platformBaseY - 100, width: 150, height: 20, type: 'platform' },
+  { x: 8200, y: platformBaseY - 180, width: 200, height: 20, type: 'platform' },
+  { x: 8500, y: platformBaseY - 80, width: 100, height: 20, type: 'platform' },
+  { x: 8900, y: platformBaseY - 220, width: 150, height: 20, type: 'platform' },
+  { x: 9300, y: platformBaseY - 140, width: 120, height: 20, type: 'platform' },
   { x: 9700, y: platformBaseY - 190, width: 250, height: 20, type: 'bridge' },
-  { x: 10100, y: platformBaseY - 100, width: 100, height: 20 },
-  { x: 10400, y: platformBaseY - 240, width: 130, height: 20 },
-  { x: 10800, y: platformBaseY - 160, width: 180, height: 20 },
-  { x: 11200, y: platformBaseY - 90, width: 150, height: 20 },
-  { x: 11600, y: platformBaseY - 200, width: 200, height: 20 },
+  { x: 10100, y: platformBaseY - 100, width: 100, height: 20, type: 'platform' },
+  { x: 10400, y: platformBaseY - 240, width: 130, height: 20, type: 'platform' },
+  { x: 10800, y: platformBaseY - 160, width: 180, height: 20, type: 'platform' },
+  { x: 11200, y: platformBaseY - 90, width: 150, height: 20, type: 'platform' },
+  { x: 11600, y: platformBaseY - 200, width: 200, height: 20, type: 'platform' },
 ];
 
 const coins = [
@@ -335,7 +333,7 @@ function togglePause() {
   } else if (gameState === "paused") {
     gameState = "playing";
     pauseMenu.style.display = "none";
-    if (assets.music) {
+    if (assets.music && musicEnabled) {
       let playPromise = assets.music.play();
       if (playPromise !== undefined) playPromise.catch(error => console.warn("Music resume failed:", error));
     }
@@ -347,10 +345,6 @@ function togglePause() {
 resumeButton.onclick = togglePause;
 retryButton.onclick = () => { console.log("Retry clicked"); location.reload(); };
 mainMenuButton.onclick = () => { console.log("Main Menu clicked"); window.location.href = "../index.html"; };
-toggleMusicButton.onclick = () => {
-  assets.music.muted = !assets.music.muted;
-  toggleMusicButton.textContent = assets.music.muted ? "Unmute Music" : "Mute Music";
-};
 
 function startTimer(currentTime = 120) {
   timer = currentTime;
@@ -426,9 +420,9 @@ function gameLoop() {
       }
     } else if (p.type === 'bridge' && assets.bridge.complete && assets.bridge.naturalHeight !== 0) {
       ctx.drawImage(assets.bridge, p.x - cameraX, p.y, p.width, p.height);
-    } else if (p.type.startsWith('step') && assets[p.type] && assets[p.type].complete && assets[p.type].naturalHeight !== 0) {
+    } else if (p.type && p.type.startsWith('step') && assets[p.type] && assets[p.type].complete && assets[p.type].naturalHeight !== 0) {
       ctx.drawImage(assets[p.type], p.x - cameraX, p.y, p.width, p.height);
-    } else if (assets.platform.complete && assets.platform.naturalHeight !== 0) {
+    } else if (p.type === 'platform' && assets.platform.complete && assets.platform.naturalHeight !== 0) {
       ctx.drawImage(assets.platform, p.x - cameraX, p.y, p.width, p.height);
     } else {
       ctx.fillStyle = "grey";
@@ -472,12 +466,33 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+function endGame() {
+  // This function is called by endLevel when timer reaches 0 or all coins collected
+  // It should primarily handle stopping game processes and cleaning up,
+  // letting endLevel handle UI transitions.
+  console.log("endGame called. Current score:", score); // Retain this log
+
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  if (assets.music) {
+    assets.music.pause();
+    assets.music.currentTime = 0; // Reset music for next play
+  }
+}
+
+
 function endLevel(message = "Level Ended") {
   if (gameState === "ended") return;
   console.log("endLevel called with message:", message);
-  gameState = "ended";
-  clearInterval(timerInterval);
-  if (assets.music) assets.music.pause();
+  gameState = "ended"; // Set game state to ended
+  endGame(); // Call endGame for cleanup
 
   const allCoinsCollected = coins.every(c => c.collected);
   const nextLevelBtn = document.getElementById("nextLevelBtn");
@@ -586,9 +601,11 @@ function initGame() {
 
   if (assets.music) {
     assets.music.currentTime = 0;
-    let playPromise = assets.music.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(error => console.warn("Music autoplay for Level 2 was prevented:", error));
+    if (musicEnabled) {
+        let playPromise = assets.music.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => console.warn("Music autoplay for Level 2 was prevented:", error));
+        }
     }
   }
   startTimer();
@@ -701,7 +718,7 @@ function placeLetter(letter, startX, startY, scale = 1) {
       "1      ",
       "1      "
     ],
-    'E': [
+    'E2': [ // This is the distinct 'E' pattern for the end of WEPE
       "1111111",
       "1      ",
       "1      ",
@@ -712,9 +729,7 @@ function placeLetter(letter, startX, startY, scale = 1) {
     ]
   };
   const patternRows = patterns[letter];
-
   if (!patternRows) return;
-
   for (let dy = 0; dy < patternRows.length; dy++) {
     const row = patternRows[dy];
     for (let dx = 0; dx < row.length; dx++) {
@@ -731,18 +746,14 @@ function placeLetter(letter, startX, startY, scale = 1) {
   }
 }
 
-// Spell WEPE in the middle of the level
-let letterStartX = 14000;
-let letterStartY = platformBaseY - 400;
-placeLetter('W', letterStartX, letterStartY, 1.5);
-placeLetter('E', letterStartX + 200, letterStartY, 1.5);
-placeLetter('P', letterStartX + 350, letterStartY, 1.5);
-placeLetter('E', letterStartX + 500, letterStartY, 1.5); // 'E' from original patterns, will use new 'E' pattern
+// 🧹 Remove old WEPE positions (manually if necessary)
+// 🟢 Place new centered and spaced W E P E
+let startX = 13000;
+let startY = platformBaseY - 500;
+let spacing = 260;
+placeLetter('W', startX, startY, 1.5);
+placeLetter('E', startX + spacing, startY, 1.5);
+placeLetter('P', startX + spacing * 2, startY, 1.5);
+placeLetter('E2', startX + spacing * 3, startY, 1.5); // <-- This is the last E
 
-// Spell WEPE at the beginning of the level
-let firstWEPEStartX = 800;
-let firstWEPEStartY = platformBaseY - 300;
-placeLetter('W', firstWEPEStartX, firstWEPEStartY, 1.5);
-placeLetter('E', firstWEPEStartX + 200, firstWEPEStartY, 1.5);
-placeLetter('P', firstWEPEStartX + 350, firstWEPEStartY, 1.5);
-placeLetter('E', firstWEPEStartX + 500, firstWEPEStartY, 1.5); // 'E' from original patterns, will use new 'E' pattern
+let musicEnabled = true; // Track if music should play
