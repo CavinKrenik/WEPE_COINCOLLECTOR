@@ -416,11 +416,11 @@ window.addEventListener("keyup", e => {
   if (e.code === "ArrowRight") keys.right = false;
 });
 
-document.getElementById("leftBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.left = true; });
-document.getElementById("leftBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.left = false; });
-document.getElementById("rightBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.right = true; });
-document.getElementById("rightBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.right = false; });
-document.getElementById("jumpBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") player.jump(); });
+// REMOVE THE FOLLOWING LINES THAT REFERENCE leftBtn and rightBtn
+// document.getElementById("leftBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.left = true; });
+// document.getElementById("leftBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.left = false; });
+// document.getElementById("rightBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") keys.right = true; });
+// document.getElementById("rightBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.right = false; });
 
 const joystickArea = document.getElementById('joystickArea');
 const joystickBase = document.getElementById('joystickBase');
@@ -453,14 +453,14 @@ joystickArea.addEventListener('touchmove', function(e) {
 
     // Set movement keys
     if (dx < -10) {
-        keys.ArrowLeft = true;
-        keys.ArrowRight = false;
+        keys.left = true; // Use keys.left as defined globally
+        keys.right = false;
     } else if (dx > 10) {
-        keys.ArrowLeft = false;
-        keys.ArrowRight = true;
+        keys.left = false;
+        keys.right = true; // Use keys.right as defined globally
     } else {
-        keys.ArrowLeft = false;
-        keys.ArrowRight = false;
+        keys.left = false;
+        keys.right = false;
     }
     e.preventDefault();
 }, { passive: false });
@@ -468,8 +468,8 @@ joystickArea.addEventListener('touchmove', function(e) {
 joystickArea.addEventListener('touchend', function(e) {
     joystickActive = false;
     moveKnob(0, 0);
-    keys.ArrowLeft = false;
-    keys.ArrowRight = false;
+    keys.left = false; // Use keys.left as defined globally
+    keys.right = false; // Use keys.right as defined globally
     e.preventDefault();
 }, { passive: false });
 
@@ -928,5 +928,54 @@ placeLetter('W', startX, startY, 1.5);
 placeLetter('E', startX + spacing, startY, 1.5);
 placeLetter('P', startX + spacing * 2, startY, 1.5);
 placeLetter('E2', startX + spacing * 3, startY, 1.5); // <-- This is the last E
+
+// Define the WEPE area bounding box
+const wepeArea = {
+  x: startX - 30, // a little padding
+  y: startY - 30,
+  width: spacing * 4 + 200, // covers all 4 letters + some padding
+  height: 7 * 30 * 1.5 + 60 // 7 rows, scaled, plus some padding
+};
+
+// Remove coins that overlap the WEPE area (except the WEPE coins themselves)
+const wepeCoinsSet = new Set();
+for (let dy = 0; dy < 7; dy++) {
+  for (let dx = 0; dx < 7; dx++) {
+    // This loop is just to help, but you already placed the WEPE coins, so we keep them by their exact positions
+  }
+}
+const wepeCoinPositions = coins
+  .filter(c =>
+    c.x >= wepeArea.x &&
+    c.x <= wepeArea.x + wepeArea.width &&
+    c.y >= wepeArea.y &&
+    c.y <= wepeArea.y + wepeArea.height
+  )
+  .map(c => `${c.x},${c.y}`);
+
+// Now filter coins: keep if outside WEPE area, or if it's a WEPE coin
+coins = coins.filter(c =>
+  c.x < wepeArea.x ||
+  c.x > wepeArea.x + wepeArea.width ||
+  c.y < wepeArea.y ||
+  c.y > wepeArea.y + wepeArea.height ||
+  wepeCoinPositions.includes(`${c.x},${c.y}`)
+);
+
+// Remove platforms that overlap the WEPE area
+platforms = platforms.filter(p =>
+  p.x + p.width < wepeArea.x ||
+  p.x > wepeArea.x + wepeArea.width ||
+  p.y + p.height < wepeArea.y ||
+  p.y > wepeArea.y + wepeArea.height
+);
+
+// Remove spikes that overlap the WEPE area
+spikes = spikes.filter(s =>
+  s.x + s.width < wepeArea.x ||
+  s.x > wepeArea.x + wepeArea.width ||
+  s.y + s.height < wepeArea.y ||
+  s.y > wepeArea.y + wepeArea.height
+);
 
 let musicEnabled = true; // Track if music should play
