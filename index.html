@@ -24,7 +24,13 @@
             <button id="toggleMusicButton">Toggle Music</button>
         </div>
         <div id="touchControls">
-            <button id="leftBtn">&#9664;</button> <button id="jumpBtn">☰</button>   <button id="rightBtn">&#9654;</button>  </div>
+            <div id="joystickArea">
+                <div id="joystickBase">
+                    <div id="joystickKnob"></div>
+                </div>
+            </div>
+            <button id="jumpBtn" class="jump-btn">⭮</button>
+        </div>
         <button id="viewHighscoresButton">View High Scores</button> {/* This is the existing one, likely for the title screen */}
     </div>
     <audio id="bgMusic" src="levelone.wav" loop></audio>

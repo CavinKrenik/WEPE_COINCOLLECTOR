@@ -422,6 +422,68 @@ document.getElementById("rightBtn").addEventListener("touchstart", e => { e.prev
 document.getElementById("rightBtn").addEventListener("touchend", e => { e.preventDefault(); if (gameState === "playing") keys.right = false; });
 document.getElementById("jumpBtn").addEventListener("touchstart", e => { e.preventDefault(); if (gameState === "playing") player.jump(); });
 
+const joystickArea = document.getElementById('joystickArea');
+const joystickBase = document.getElementById('joystickBase');
+const joystickKnob = document.getElementById('joystickKnob');
+const jumpBtn = document.getElementById('jumpBtn');
+
+let joystickActive = false;
+let joystickStart = { x: 0, y: 0 };
+
+joystickArea.addEventListener('touchstart', function(e) {
+    joystickActive = true;
+    const touch = e.touches[0];
+    joystickStart = { x: touch.clientX, y: touch.clientY };
+    moveKnob(0, 0);
+    e.preventDefault();
+}, { passive: false });
+
+joystickArea.addEventListener('touchmove', function(e) {
+    if (!joystickActive) return;
+    const touch = e.touches[0];
+    let dx = touch.clientX - joystickStart.x;
+    let dy = touch.clientY - joystickStart.y;
+    const maxDist = 40;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > maxDist) {
+        dx = dx * maxDist / dist;
+        dy = dy * maxDist / dist;
+    }
+    moveKnob(dx, dy);
+
+    // Set movement keys
+    if (dx < -10) {
+        keys.ArrowLeft = true;
+        keys.ArrowRight = false;
+    } else if (dx > 10) {
+        keys.ArrowLeft = false;
+        keys.ArrowRight = true;
+    } else {
+        keys.ArrowLeft = false;
+        keys.ArrowRight = false;
+    }
+    e.preventDefault();
+}, { passive: false });
+
+joystickArea.addEventListener('touchend', function(e) {
+    joystickActive = false;
+    moveKnob(0, 0);
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    e.preventDefault();
+}, { passive: false });
+
+function moveKnob(dx, dy) {
+    joystickKnob.style.left = (25 + dx) + 'px';
+    joystickKnob.style.top = (25 + dy) + 'px';
+}
+
+// Jump button
+jumpBtn.addEventListener('touchstart', function(e) {
+    if (gameState === 'playing') player.jump();
+    e.preventDefault();
+});
+
 function togglePause() {
   if (gameState === "playing") {
     gameState = "paused";
@@ -589,20 +651,30 @@ function endGame() {
 function endLevel(message = "Level Ended") {
   if (gameState === "ended") return;
   console.log("endLevel called with message:", message);
-  gameState = "ended"; // Set game state to ended
-  endGame(); // Call endGame for cleanup
+  gameState = "ended";
+  endGame();
 
   const allCoinsCollected = coins.every(c => c.collected);
   const nextLevelBtn = document.getElementById("nextLevelBtn");
 
+  if (message === "Time's Up!") {
+    // Show score and ask to restart or go to main menu
+    const restart = window.confirm(`Time's Up!\nYour Score: ${score}\n\nRestart level? (Cancel for Main Menu)`);
+    if (restart) {
+      location.reload();
+    } else {
+      window.location.href = "../index.html";
+    }
+    return;
+  }
+
   if (nextLevelBtn) {
-    if (message === "Time's Up!" || !allCoinsCollected) {
+    if (!allCoinsCollected) {
       pauseMenu.children[0].textContent = message + (allCoinsCollected ? " - All Coins!" : " - Try Again?");
       pauseMenu.style.display = "flex";
       if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "none";
       if (document.getElementById("retryButton")) document.getElementById("retryButton").style.display = "block";
       if (document.getElementById("mainMenuButton")) document.getElementById("mainMenuButton").style.display = "block";
-
     } else if (allCoinsCollected) {
       nextLevelBtn.textContent = "You Win! (Next coming soon)";
       nextLevelBtn.style.display = "block";

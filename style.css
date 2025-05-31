@@ -132,34 +132,51 @@ html, body {
 
 
 #touchControls {
-  position: fixed;
-  bottom: 1.5vh; 
+  position: absolute;
+  bottom: 30px;
   left: 0;
   width: 100vw;
   display: flex;
-  justify-content: space-around; 
-  align-items: center; 
-  gap: 1vw; 
-  z-index: 20;
-  pointer-events: none; 
+  justify-content: space-between;
+  pointer-events: none;
 }
 
-#touchControls button {
+#joystickArea {
+  width: 120px;
+  height: 120px;
+  margin-left: 20px;
   pointer-events: auto;
-  font-size: clamp(24px, 7vw, 40px); 
-  padding: 1.5vh 2.5vw; 
-  background: rgba(255,255,255,0.6); 
-  border: 1px solid rgba(200,200,200,0.8); 
-  border-radius: 2vh; 
-  cursor: pointer;
-  user-select: none;
-  line-height: 1; 
-  min-width: 18vw; 
-  text-align: center;
+  touch-action: none;
 }
 
-@media (min-width: 800px) { 
-  #touchControls {
-     display: none;
-  }
+#joystickBase {
+  width: 100px;
+  height: 100px;
+  background: rgba(100,100,100,0.3);
+  border-radius: 50%;
+  position: relative;
+  margin: 10px;
+}
+
+#joystickKnob {
+  width: 50px;
+  height: 50px;
+  background: rgba(200,200,200,0.7);
+  border-radius: 50%;
+  position: absolute;
+  left: 25px;
+  top: 25px;
+  transition: left 0.05s, top 0.05s;
+}
+
+.jump-btn {
+  width: 90px;
+  height: 90px;
+  margin-right: 30px;
+  font-size: 2.5em;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  border: 2px solid #aaa;
+  pointer-events: auto;
+  touch-action: none;
 }

@@ -495,23 +495,66 @@ window.addEventListener('load', function () {
     const leftBtn = document.getElementById('leftBtn');
     const rightBtn = document.getElementById('rightBtn');
     const jumpBtn = document.getElementById('jumpBtn');
+    const joystickArea = document.getElementById('joystickArea');
+    const joystickBase = document.getElementById('joystickBase');
+    const joystickKnob = document.getElementById('joystickKnob');
 
-    // Add touch event listeners (ensure these are robust for your needs)
-    // Example for left button:
-    leftBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = true; });
-    leftBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = false; });
-    leftBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = true; }); // For desktop testing
-    leftBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowLeft = false; });
+    let joystickActive = false;
+    let joystickStart = { x: 0, y: 0 };
 
-    rightBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = true; });
-    rightBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = false; });
-    rightBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = true; });
-    rightBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.ArrowRight = false; });
+    joystickArea.addEventListener('touchstart', function(e) {
+        joystickActive = true;
+        const touch = e.touches[0];
+        joystickStart = { x: touch.clientX, y: touch.clientY };
+        moveKnob(0, 0);
+        e.preventDefault();
+    }, { passive: false });
 
-    jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') { keys.Space = true; player.jump(); } });
-    jumpBtn.addEventListener('touchend', e => { e.preventDefault(); if (gameState === 'playing') keys.Space = false; });
-    jumpBtn.addEventListener('mousedown', e => { e.preventDefault(); if (gameState === 'playing') { keys.Space = true; player.jump(); } });
-    jumpBtn.addEventListener('mouseup', e => { e.preventDefault(); if (gameState === 'playing') keys.Space = false; });
+    joystickArea.addEventListener('touchmove', function(e) {
+        if (!joystickActive) return;
+        const touch = e.touches[0];
+        let dx = touch.clientX - joystickStart.x;
+        let dy = touch.clientY - joystickStart.y;
+        const maxDist = 40;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > maxDist) {
+            dx = dx * maxDist / dist;
+            dy = dy * maxDist / dist;
+        }
+        moveKnob(dx, dy);
+
+        // Set movement keys
+        if (dx < -10) {
+            keys.ArrowLeft = true;
+            keys.ArrowRight = false;
+        } else if (dx > 10) {
+            keys.ArrowLeft = false;
+            keys.ArrowRight = true;
+        } else {
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
+        }
+        e.preventDefault();
+    }, { passive: false });
+
+    joystickArea.addEventListener('touchend', function(e) {
+        joystickActive = false;
+        moveKnob(0, 0);
+        keys.ArrowLeft = false;
+        keys.ArrowRight = false;
+        e.preventDefault();
+    }, { passive: false });
+
+    function moveKnob(dx, dy) {
+        joystickKnob.style.left = (25 + dx) + 'px';
+        joystickKnob.style.top = (25 + dy) + 'px';
+    }
+
+    // Jump button
+    jumpBtn.addEventListener('touchstart', function(e) {
+        if (gameState === 'playing') player.jump();
+        e.preventDefault();
+    });
 
 
     // --- Scaling and Resizing ---
