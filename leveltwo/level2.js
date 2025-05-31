@@ -75,7 +75,7 @@ let gameState = "loading";
 let cameraX = 0;
 let timerInterval;
 let totalGameWidth = 30000; // Increased game width
-let musicEnabled = true; // MOVED THIS DECLARATION HERE (WAS AT THE END OF THE FILE)
+let musicEnabled = true; // MOVED THIS DECLARATION HERE (PREVIOUSLY AT THE END OF THE FILE)
 
 if (toggleMusicButton) { // Check if the button exists before adding listener
     toggleMusicButton.onclick = function () {
@@ -581,8 +581,15 @@ function gameLoop() {
       }
     } else if (p.type === 'bridge' && assets.bridge.complete && assets.bridge.naturalHeight !== 0) {
       ctx.drawImage(assets.bridge, p.x - cameraX, p.y, p.width, p.height);
-    } else if (p.type && p.type.startsWith('step') && assets[p.type] && assets[p.type].complete && assets[p.type].naturalHeight !== 0) {
-      ctx.drawImage(assets[p.type], p.x - cameraX, p.y, p.width, p.height);
+    } else if (p.type && (p.type.startsWith('greenstep') || p.type.startsWith('redstep'))) { // FIX: Corrected condition here
+      const img = assets[p.type];
+      if (img && img.complete && img.naturalHeight !== 0) {
+          ctx.drawImage(img, p.x - cameraX, p.y, p.width, p.height);
+      } else {
+          // Fallback drawing if image fails, useful for debugging
+          ctx.fillStyle = p.type.startsWith('green') ? 'green' : 'red';
+          ctx.fillRect(p.x - cameraX, p.y, p.width, p.height);
+      }
     } else if (p.type === 'platform' && assets.platform.complete && assets.platform.naturalHeight !== 0) {
       ctx.drawImage(assets.platform, p.x - cameraX, p.y, p.width, p.height);
     } else {
@@ -752,9 +759,11 @@ addCryptoChartStaircase(11000, platformBaseY - 150, 20);
 addCryptoChartStaircase(21000, platformBaseY - 200, 25);
 // ADDED addCryptoChartStaircase calls for expanded game width
 addCryptoChartStaircase(7000, platformBaseY - 80, 10); // Shorter staircase earlier
-addCryptoChartStaircase(14000, platformBaseY - 220, 20); // Mid-game challenge
-addCryptoChartStaircase(18000, platformBaseY - 100, 15); // Another mid-game staircase
-addCryptoChartStaircase(23000, platformBaseY - 170, 20); // Towards the end
+// FIX: Moved this staircase to avoid conflict with WEPE letters.
+addCryptoChartStaircase(15000, platformBaseY - 220, 20);
+// FIX: Moved this staircase to avoid conflict with WEPE letters.
+addCryptoChartStaircase(20000, platformBaseY - 100, 15);
+addCryptoChartStaircase(23000, platformBaseY - 170, 20);
 
 
 function initGame() {
@@ -920,7 +929,6 @@ function placeLetter(letter, startX, startY, scale = 1) {
   }
 }
 
-// 🧹 Remove old WEPE positions (manually if necessary)
 // 🟢 Place new centered and spaced W E P E
 let startX = 13000;
 let startY = platformBaseY - 500;
@@ -928,4 +936,4 @@ let spacing = 260;
 placeLetter('W', startX, startY, 1.5);
 placeLetter('E', startX + spacing, startY, 1.5);
 placeLetter('P', startX + spacing * 2, startY, 1.5);
-placeLetter('E2', startX + spacing * 3, startY, 1.5); // <-- This is the last E
+placeLetter('E2', startX + spacing * 3, startY, 1.5);
