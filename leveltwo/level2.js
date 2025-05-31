@@ -31,34 +31,34 @@ const assets = {
 
 console.log("Initializing asset loading for Level 2...");
 
-// --- IMPORTANT: Ensure asset files are in the 'leveltwo' folder ---
-assets.bg.src = "level2background.gif";
-assets.playerLeft[0].src = "Left.png";
-assets.playerLeft[1].src = "left1.png";
-assets.playerRight[0].src = "right.png";
-assets.playerRight[1].src = "right1.png";
-assets.playerJumpLeft.src = "jumpleft.png";
-assets.playerJumpRight.src = "jumpright.png";
-assets.platform.src = "Platform.png";
-assets.coin.src = "btc.png";
-assets.bushBig.src = "Big_Bush.png";
-assets.bushSmall.src = "Small_Bush.png";
-assets.spikes.src = "Spikes.png";
+// --- IMPORTANT: Asset file paths adjusted for parent directory access ---
+assets.bg.src = "level2background.gif"; // This is specific to leveltwo
+assets.playerLeft[0].src = "../Left.png";
+assets.playerLeft[1].src = "../left1.png";
+assets.playerRight[0].src = "../right.png";
+assets.playerRight[1].src = "../right1.png";
+assets.playerJumpLeft.src = "../jumpleft.png";
+assets.playerJumpRight.src = "../jumpright.png";
+assets.platform.src = "../Platform.png";
+assets.coin.src = "../btc.png";
+assets.bushBig.src = "../Big_Bush.png";
+assets.bushSmall.src = "../Small_Bush.png";
+assets.spikes.src = "../Spikes.png";
 
-assets.dirt.src = "dirt.png";
-assets.grass.src = "grass.png";
-assets.bridge.src = "bridge.png";
-assets.blockEmpty.src = "blockempty.png";
-assets.cryptostep.src = "cryptostep.png";
+assets.dirt.src = "../dirt.png";
+assets.grass.src = "../grass.png";
+assets.bridge.src = "../bridge.png";
+assets.blockEmpty.src = "../blockempty.png";
+assets.cryptostep.src = "../cryptostep.png";
 
-assets.greenstepsmall.src = "greenstepsmall.png";
-assets.greenstepmedium.src = "greenstepmedium.png";
-assets.greensteplarge.src = "greensteplarge.png";
-assets.redstepsmall.src = "redstepsmall.png";
-assets.redstepmedium.src = "redstepmedium.png";
-assets.redsteplarge.src = "redsteplarge.png";
+assets.greenstepsmall.src = "../greenstepsmall.png";
+assets.greenstepmedium.src = "../greenstepmedium.png";
+assets.greensteplarge.src = "../greensteplarge.png";
+assets.redstepsmall.src = "../redstepsmall.png";
+assets.redstepmedium.src = "../redstepmedium.png";
+assets.redsteplarge.src = "../redsteplarge.png";
 
-assets.music.src = "Fast Desert Theme.wav";
+assets.music.src = "Fast Desert Theme.wav"; // This is specific to leveltwo
 assets.music.loop = true;
 assets.music.volume = 0.5;
 
@@ -67,7 +67,24 @@ const pauseMenu = document.getElementById("pauseMenu");
 const resumeButton = document.getElementById("resumeButton");
 const retryButton = document.getElementById("retryButton");
 const mainMenuButton = document.getElementById("mainMenuButton");
+const toggleMusicButton = document.getElementById("toggleMusicButton");
 
+toggleMusicButton.onclick = function () {
+    if (assets.music.paused) {
+        assets.music.play();
+        toggleMusicButton.textContent = "Pause Music";
+    } else {
+        assets.music.pause();
+        toggleMusicButton.textContent = "Play Music";
+    }
+};
+
+// Optional: Set initial button text based on music state
+if (assets.music.paused) {
+    toggleMusicButton.textContent = "Play Music";
+} else {
+    toggleMusicButton.textContent = "Pause Music";
+}
 
 // Game state
 let score = 0;
@@ -330,6 +347,10 @@ function togglePause() {
 resumeButton.onclick = togglePause;
 retryButton.onclick = () => { console.log("Retry clicked"); location.reload(); };
 mainMenuButton.onclick = () => { console.log("Main Menu clicked"); window.location.href = "../index.html"; };
+toggleMusicButton.onclick = () => {
+  assets.music.muted = !assets.music.muted;
+  toggleMusicButton.textContent = assets.music.muted ? "Unmute Music" : "Mute Music";
+};
 
 function startTimer(currentTime = 120) {
   timer = currentTime;
@@ -679,6 +700,15 @@ function placeLetter(letter, startX, startY, scale = 1) {
       "1      ",
       "1      ",
       "1      "
+    ],
+    'E': [
+      "1111111",
+      "1      ",
+      "1      ",
+      "111111 ",
+      "1      ",
+      "1      ",
+      "1111111"
     ]
   };
   const patternRows = patterns[letter];

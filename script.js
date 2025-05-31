@@ -614,4 +614,21 @@ window.addEventListener('load', function () {
     console.log("Setting up initial game view.");
     resizeCanvas(); // Set initial canvas size
     goToMainMenu(); // Start on the title screen
+
+    // --- Music Toggle Button ---
+    const toggleMusicButton = document.getElementById('toggleMusicButton');
+    if (toggleMusicButton && bgMusic) {
+        toggleMusicButton.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.play();
+                toggleMusicButton.textContent = "Pause Music";
+            } else {
+                bgMusic.pause();
+                toggleMusicButton.textContent = "Play Music";
+            }
+        });
+
+        // Set initial button text
+        toggleMusicButton.textContent = bgMusic.paused ? "Play Music" : "Pause Music";
+    }
 });
