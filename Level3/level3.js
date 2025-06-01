@@ -21,8 +21,7 @@ assets.rocket1.src = "Assets/rocket.png"; // Corrected path
 assets.rocket2.src = "Assets/rocket2.png"; // Corrected path
 assets.rocketBoost.src = "Assets/rocketboost.png"; // Corrected path
 assets.coin.src = "Assets/coin.png"; // Corrected path
-assets.music.src = "Assets/backgroundmusic.wav"; // Corrected path
-
+assets.music.src = "Assets/backgroundmusic.wav";
 assets.music.loop = true;
 assets.music.volume = 0.5;
 
