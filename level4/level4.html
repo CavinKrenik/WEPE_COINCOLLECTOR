@@ -7,10 +7,12 @@
     <link rel="stylesheet" href="level4.css">
 </head>
 <body>
+    <audio id="bgMusic" src="level4backgroundmusic.mp3" loop autoplay></audio>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div id="scoreDisplay">Score: 0</div>
-        <div id="timerDisplay">Time: 3:00</div> <div id="pauseMenu" style="display:none;">
+        <div id="timerDisplay">Time: 3:00</div>
+        <div id="pauseMenu" style="display:none;">
             <div>Game Paused</div>
             <button id="resumeButton">Resume</button>
             <button id="retryButton">Retry Level</button>
@@ -23,7 +25,9 @@
                     <div id="joystickKnob"></div>
                 </div>
             </div>
-            <button id="shootBtn" class="action-btn">FIRE</button> <button id="jumpBtn" class="action-btn">JUMP</button> </div>
+            <button id="shootBtn" class="action-btn">FIRE</button>
+            <button id="jumpBtn" class="action-btn">JUMP</button>
+        </div>
     </div>
     <script src="level4.js"></script>
 </body>
