@@ -519,13 +519,14 @@ function assetLoadHandler(assetName, success) {
 
 for (const key in assets) {
   const assetItem = assets[key];
-  if (assetItem instanceof HTMLImageElement || assetItem instanceof HTMLAudioElement) {
-    const src = assetItem.src || `audio_${key}`;
+  if (assetItem instanceof HTMLImageElement) {
+    const src = assetItem.src;
     assetItem.onload = () => assetLoadHandler(src, true);
     assetItem.onerror = () => assetLoadHandler(src, false);
-    if (assetItem instanceof HTMLAudioElement) {
-      assetItem.oncanplaythrough = () => assetLoadHandler(src, true);
-    }
+  } else if (assetItem instanceof HTMLAudioElement) {
+    const src = assetItem.src || `audio_${key}`;
+    assetItem.oncanplaythrough = () => assetLoadHandler(src, true);
+    assetItem.onerror = () => assetLoadHandler(src, false);
   } else if (Array.isArray(assetItem)) {
     assetItem.forEach(img => {
       if (img instanceof HTMLImageElement) {
@@ -556,6 +557,13 @@ window.addEventListener('resize', () => {
   player.y = Math.min(player.y, canvas.height - player.height);
   cameraX = Math.min(cameraX, totalGameWidth - canvas.width);
   console.log("Canvas resized. Player and camera positions adjusted.");
+});
+
+document.body.addEventListener('pointerdown', function oncePlayMusic() {
+  if (assets.music && musicEnabled) {
+    assets.music.play();
+  }
+  document.body.removeEventListener('pointerdown', oncePlayMusic);
 });
 
 console.log("End of Level 3 script. Asset loading initiated.");

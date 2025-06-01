@@ -664,7 +664,7 @@ function endLevel(message = "Level Ended") {
     // Both time's up and all coins collected lead to this prompt
     const proceed = window.confirm(`${message}\nYour Score: ${score}\n\nProceed to Level 3?`); //
     if (proceed) {
-      window.location.href = "../Level3/Assets/level3.html"; // Corrected path to Level 3 HTML
+      window.location.href = "../Level3/level3.html"; // Corrected path to Level 3 HTML
     } else {
       window.location.href = "../index.html"; // Go back to main menu if they don't want to proceed
     }
