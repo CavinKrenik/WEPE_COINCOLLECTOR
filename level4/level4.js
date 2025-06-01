@@ -9,7 +9,8 @@ window.onload = function () {
   const bgMusic = document.getElementById("bgMusic");
   if (bgMusic) {
     bgMusic.volume = 0.3;
-    document.addEventListener("click", () => bgMusic.play());
+    // Autoplay music on user interaction (e.g., first click)
+    document.addEventListener("click", () => bgMusic.play(), { once: true });
   }
 
   const TILE_SIZE = 64;
@@ -20,20 +21,44 @@ window.onload = function () {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
   ];
 
-  const playerImg = new Image();
-  playerImg.src = "characterstep.png";
+  // Asset definitions with their sources
+  const assets = {
+    playerImg: new Image(),
+    bulletImg: new Image(),
+    enemyImg: new Image(),
+    explosionImg: new Image(),
+    backgroundTiles: new Image()
+  };
 
-  const bulletImg = new Image();
-  bulletImg.src = "bullet.png";
+  const assetSources = {
+    playerImg: "characterstep.png",
+    bulletImg: "bullet.png",
+    enemyImg: "enemywalkright.png",
+    explosionImg: "bullethitenemy.png",
+    backgroundTiles: "ground1tile.png"
+  };
 
-  const enemyImg = new Image();
-  enemyImg.src = "enemywalkright.png";
+  let assetsLoadedCount = 0;
+  const totalAssets = Object.keys(assetSources).length;
 
-  const explosionImg = new Image();
-  explosionImg.src = "bullethitenemy.png";
+  // Function to check if all assets are loaded and start the game
+  function assetLoaded() {
+    assetsLoadedCount++;
+    if (assetsLoadedCount === totalAssets) {
+      console.log("All Level 4 assets loaded. Starting game loop.");
+      gameLoop(); // Start the game loop only after all assets are loaded
+    }
+  }
 
-  const backgroundTiles = new Image();
-  backgroundTiles.src = "ground1tile.png";
+  // Load assets and attach onload/onerror handlers
+  for (const key in assetSources) {
+    assets[key].onload = assetLoaded;
+    assets[key].onerror = () => {
+      console.error(`Failed to load asset: ${assetSources[key]}`);
+      assetLoaded(); // Still call assetLoaded to allow game to start even if one asset fails
+    };
+    assets[key].src = assetSources[key];
+  }
 
   const player = {
     x: 100, y: 400,
@@ -87,25 +112,25 @@ window.onload = function () {
 
   function drawExplosions() {
     explosions.forEach((e, i) => {
-      ctx.drawImage(explosionImg, e.frame * 64, 0, 64, 64, e.x - camera.x, e.y, 64, 64);
+      ctx.drawImage(assets.explosionImg, e.frame * 64, 0, 64, 64, e.x - camera.x, e.y, 64, 64);
       if (++e.tick % 5 === 0) e.frame++;
       if (e.frame >= e.maxFrames) explosions.splice(i, 1);
     });
   }
 
   function drawPlayer() {
-    ctx.drawImage(playerImg, player.frame * 64, 0, 64, 64, player.x - camera.x, player.y, 64, 64);
+    ctx.drawImage(assets.playerImg, player.frame * 64, 0, 64, 64, player.x - camera.x, player.y, 64, 64);
     if (++player.frameTick % 10 === 0) player.frame = (player.frame + 1) % 3;
   }
 
   function drawBullets() {
-    player.bullets.forEach(b => ctx.drawImage(bulletImg, b.x - camera.x, b.y, b.width, b.height));
+    player.bullets.forEach(b => ctx.drawImage(assets.bulletImg, b.x - camera.x, b.y, b.width, b.height));
   }
 
   function drawEnemies() {
     enemies.forEach(e => {
       if (e.alive) {
-        ctx.drawImage(enemyImg, e.frame * 64, 0, 64, 64, e.x - camera.x, e.y, e.width, e.height);
+        ctx.drawImage(assets.enemyImg, e.frame * 64, 0, 64, 64, e.x - camera.x, e.y, e.width, e.height);
         if (++e.frameTick % 15 === 0) e.frame = (e.frame + 1) % 3;
         ctx.fillStyle = "red";
         ctx.fillRect(e.x - camera.x, e.y - 10, 60, 5);
@@ -171,7 +196,7 @@ window.onload = function () {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTileLayer(ctx, backgroundTiles, tileMap, TILE_SIZE, camera.x);
+    drawTileLayer(ctx, assets.backgroundTiles, tileMap, TILE_SIZE, camera.x);
     drawPlayer();
     drawBullets();
     drawEnemies();
@@ -184,6 +209,4 @@ window.onload = function () {
     draw();
     requestAnimationFrame(gameLoop);
   }
-
-  gameLoop();
 };
