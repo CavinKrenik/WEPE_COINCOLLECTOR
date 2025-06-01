@@ -15,13 +15,13 @@ const assets = {
 
 console.log("Initializing asset loading for Level 3...");
 
-// ASSET PATHS - THESE ARE NOW CORRECTED
-assets.bg.src = "background.png"; // Corrected path
-assets.rocket1.src = "rocket.png"; // Corrected path
-assets.rocket2.src = "rocket2.png"; // Corrected path
-assets.rocketBoost.src = "rocketboost.png"; // Corrected path
-assets.coin.src = "coin.png"; // Corrected path
-assets.music.src = "backgroundmusic.wav"; // Corrected path
+// ASSET PATHS - CORRECTED FOR NEW FILE STRUCTURE
+assets.bg.src = "Assets/background.png"; // Corrected path
+assets.rocket1.src = "Assets/rocket.png"; // Corrected path
+assets.rocket2.src = "Assets/rocket2.png"; // Corrected path
+assets.rocketBoost.src = "Assets/rocketboost.png"; // Corrected path
+assets.coin.src = "Assets/coin.png"; // Corrected path
+assets.music.src = "Assets/backgroundmusic.wav"; // Corrected path
 
 assets.music.loop = true;
 assets.music.volume = 0.5;
@@ -523,7 +523,7 @@ const gameStartTimeout = setTimeout(() => {
   if (gameState === "loading") {
     console.warn(`Timeout waiting for assets. ${assetsLoaded}/${totalAssets} loaded. Forcing game start attempt if not already started.`);
     if (assetsLoaded < totalAssets) {
-      console.warn("Not all assets reported loaded/failed. Game might be missing resources.");
+      console.warn("Not all assets reported loaded/failed. Game might be missing resources.`);
     }
     if (gameState === "loading") {
       initGame();
