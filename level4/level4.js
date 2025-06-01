@@ -9,8 +9,12 @@ window.onload = function () {
   const bgMusic = document.getElementById("bgMusic");
   if (bgMusic) {
     bgMusic.volume = 0.3;
-    // Autoplay music on user interaction (e.g., first click)
-    document.addEventListener("click", () => bgMusic.play(), { once: true });
+    // Fix: Add an event listener to play music on the first user interaction.
+    // This bypasses browser autoplay restrictions.
+    document.body.addEventListener("click", function oncePlayMusic() {
+      bgMusic.play().catch(e => console.error("Music autoplay failed:", e));
+      document.body.removeEventListener("click", oncePlayMusic); // Remove listener after first play
+    }, { once: true }); // Ensure the listener is only triggered once
   }
 
   const TILE_SIZE = 64;
