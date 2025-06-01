@@ -15,13 +15,13 @@ const assets = {
 
 console.log("Initializing asset loading for Level 3...");
 
-// ✅ ASSET PATHS - THESE ARE NOW CORRECTED BASED ON YOUR IMAGE
-assets.bg.src = "Assets/background.png"; // Updated path
-assets.rocket1.src = "Assets/rocket.png"; // Updated path
-assets.rocket2.src = "Assets/rocket2.png"; // Updated path
-assets.rocketBoost.src = "Assets/rocketboost.png"; // Updated path
-assets.coin.src = "Assets/coin.png"; // Updated path
-assets.music.src = "Assets/backgroundmusic.wav"; // Updated path
+// ASSET PATHS - CORRECTED FOR NEW FILE STRUCTURE
+assets.bg.src = "Assets/background.png"; // Corrected path
+assets.rocket1.src = "Assets/rocket.png"; // Corrected path
+assets.rocket2.src = "Assets/rocket2.png"; // Corrected path
+assets.rocketBoost.src = "Assets/rocketboost.png"; // Corrected path
+assets.coin.src = "Assets/coin.png"; // Corrected path
+assets.music.src = "Assets/backgroundmusic.wav"; // Corrected path
 
 assets.music.loop = true;
 assets.music.volume = 0.5;
@@ -62,10 +62,11 @@ const player = {
   y: canvas.height / 2, // Centered vertically initially
   width: 80, // Adjust based on your rocket image size
   height: 80, // Adjust based on your rocket image size
-  dx: 5, // Constant forward speed
-  dy: 0, // Vertical movement
-  verticalSpeed: 5, // Speed for up/down movement
-  boostPower: -10, // How much the boost pushes the rocket up
+  baseSpeed: 5, // Base speed for horizontal and vertical movement
+  inputDx: 0, // Horizontal speed from user input (keys/joystick)
+  inputDy: 0, // Vertical speed from user input (keys/joystick)
+  boostEffectDx: 0, // Temporary horizontal speed added by boost
+  boostStrength: 10, // How much EXTRA speed the boost gives to the right
   boostDuration: 200, // Milliseconds for boost effect
   isBoosting: false,
   boostTimer: null,
@@ -73,10 +74,10 @@ const player = {
   animationTimer: 0,
   animationSpeed: 8, // Speed of exhaust flickering
   update() {
-    this.x += this.dx; // Always move right
-
-    // Apply vertical movement based on input (joystick/keys)
-    this.y += this.dy;
+    // Calculate effective horizontal speed: input speed + boost effect
+    this.x += (this.inputDx + this.boostEffectDx);
+    // Apply vertical speed from input
+    this.y += this.inputDy;
 
     // Boundary checks for vertical movement
     if (this.y < 0) {
@@ -92,20 +93,39 @@ const player = {
       this.currentFrame = (this.currentFrame + 1) % 2;
     }
 
-    // Camera follow player
-    let targetCameraX = this.x - canvas.width / 4; // Keep player at 1/4 screen
+    // Camera follow player: keep player at 1/4 screen for a consistent feel
+    let targetCameraX = this.x - canvas.width / 4;
     cameraX = Math.max(0, Math.min(targetCameraX, totalGameWidth - canvas.width));
   },
   draw() {
-    let img;
+    let currentImage;
     if (this.isBoosting) {
-      img = assets.rocketBoost;
+      currentImage = assets.rocketBoost;
     } else {
-      img = this.currentFrame === 0 ? assets.rocket1 : assets.rocket2;
+      currentImage = this.currentFrame === 0 ? assets.rocket1 : assets.rocket2;
     }
 
-    if (img && img.complete && img.naturalHeight !== 0) {
-      ctx.drawImage(img, this.x - cameraX, this.y, this.width, this.height);
+    if (currentImage && currentImage.complete && currentImage.naturalHeight !== 0) {
+        let drawWidth = this.width;
+        let drawHeight = this.height;
+
+        // Calculate aspect ratio and adjust dimensions to prevent scrunching
+        const imageAspectRatio = currentImage.naturalWidth / currentImage.naturalHeight;
+        const playerBoxAspectRatio = this.width / this.height;
+
+        if (imageAspectRatio > playerBoxAspectRatio) {
+            // Image is wider than the player box, fit by width
+            drawHeight = this.width / imageAspectRatio;
+        } else {
+            // Image is taller or same aspect ratio, fit by height
+            drawWidth = this.height * imageAspectRatio;
+        }
+
+        // Center the image within the player's bounding box if it's smaller
+        const offsetX = (this.width - drawWidth) / 2;
+        const offsetY = (this.height - drawHeight) / 2;
+
+        ctx.drawImage(currentImage, this.x - cameraX + offsetX, this.y + offsetY, drawWidth, drawHeight);
     } else {
       ctx.fillStyle = "blue"; // Fallback color
       ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
@@ -115,19 +135,20 @@ const player = {
     if (gameState !== "playing" || this.isBoosting) return;
 
     this.isBoosting = true;
-    this.dy = this.boostPower; // Apply upward boost
+    this.boostEffectDx = this.boostStrength; // Apply horizontal boost effect
 
     if (this.boostTimer) clearTimeout(this.boostTimer);
     this.boostTimer = setTimeout(() => {
       this.isBoosting = false;
-      this.dy = 0; // Stop vertical boost effect
+      this.boostEffectDx = 0; // Remove boost effect after duration
     }, this.boostDuration);
   },
   reset() {
     this.x = canvas.width / 4;
     this.y = canvas.height / 2;
-    this.dx = 5;
-    this.dy = 0;
+    this.inputDx = 0;
+    this.inputDy = 0;
+    this.boostEffectDx = 0; // Reset boost effect
     this.isBoosting = false;
     if (this.boostTimer) clearTimeout(this.boostTimer);
     this.boostTimer = null;
@@ -160,7 +181,7 @@ const scenery = [
 ];
 
 // Input handling (keyboard)
-const keys = {};
+const keys = {}; // Add 'left', 'right' to keys object implicitly
 window.addEventListener("keydown", e => {
   if (e.code === "Escape") {
     togglePause();
@@ -171,10 +192,22 @@ window.addEventListener("keydown", e => {
 
   if (e.code === "ArrowUp") {
     keys.up = true;
+    player.inputDy = -player.baseSpeed; // Set inputDy for vertical movement
     e.preventDefault();
   }
   if (e.code === "ArrowDown") {
     keys.down = true;
+    player.inputDy = player.baseSpeed; // Set inputDy for vertical movement
+    e.preventDefault();
+  }
+  if (e.code === "ArrowLeft") { // New: Horizontal left movement
+    keys.left = true;
+    player.inputDx = -player.baseSpeed; // Set inputDx for horizontal movement
+    e.preventDefault();
+  }
+  if (e.code === "ArrowRight") { // New: Horizontal right movement
+    keys.right = true;
+    player.inputDx = player.baseSpeed; // Set inputDx for horizontal movement
     e.preventDefault();
   }
   if (e.code === "Space") {
@@ -184,11 +217,25 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("keyup", e => {
-  if (e.code === "ArrowUp") keys.up = false;
-  if (e.code === "ArrowDown") keys.down = false;
+  if (e.code === "ArrowUp") {
+    keys.up = false;
+    if (!keys.down) player.inputDy = 0; // Stop vertical if no other vertical key pressed
+  }
+  if (e.code === "ArrowDown") {
+    keys.down = false;
+    if (!keys.up) player.inputDy = 0; // Stop vertical if no other vertical key pressed
+  }
+  if (e.code === "ArrowLeft") { // New: Horizontal left movement
+    keys.left = false;
+    if (!keys.right) player.inputDx = 0; // Stop horizontal if no other horizontal key pressed
+  }
+  if (e.code === "ArrowRight") { // New: Horizontal right movement
+    keys.right = false;
+    if (!keys.left) player.inputDx = 0; // Stop horizontal if no other horizontal key pressed
+  }
 });
 
-// Touch controls (joystick for vertical, boostBtn for boost)
+// Touch controls (joystick for vertical and horizontal, boostBtn for boost)
 const joystickArea = document.getElementById('joystickArea');
 const joystickBase = document.getElementById('joystickBase');
 const joystickKnob = document.getElementById('joystickKnob');
@@ -208,21 +255,32 @@ joystickArea.addEventListener('touchstart', function(e) {
 joystickArea.addEventListener('touchmove', function(e) {
   if (!joystickActive) return;
   const touch = e.touches[0];
-  let dy = touch.clientY - joystickStart.y; // Only consider vertical movement
+  let dx = touch.clientX - joystickStart.x; // Horizontal movement
+  let dy = touch.clientY - joystickStart.y; // Vertical movement
   const maxDist = 40;
-  const dist = Math.sqrt(dy * dy); // Only vertical distance
+  const dist = Math.sqrt(dx * dx + dy * dy);
   if (dist > maxDist) {
+    dx = dx * maxDist / dist;
     dy = dy * maxDist / dist;
   }
-  moveKnob(0, dy); // Only move knob vertically
+  moveKnob(dx, dy); // Move knob in both x and y
 
-  // Set vertical movement
-  if (dy < -10) { // Moving up
-    player.dy = -player.verticalSpeed;
-  } else if (dy > 10) { // Moving down
-    player.dy = player.verticalSpeed;
+  // Set horizontal movement input
+  if (dx < -10) {
+    player.inputDx = -player.baseSpeed;
+  } else if (dx > 10) {
+    player.inputDx = player.baseSpeed;
   } else {
-    player.dy = 0;
+    player.inputDx = 0;
+  }
+
+  // Set vertical movement input
+  if (dy < -10) {
+    player.inputDy = -player.baseSpeed;
+  } else if (dy > 10) {
+    player.inputDy = player.baseSpeed;
+  } else {
+    player.inputDy = 0;
   }
   e.preventDefault();
 }, { passive: false });
@@ -230,7 +288,8 @@ joystickArea.addEventListener('touchmove', function(e) {
 joystickArea.addEventListener('touchend', function(e) {
   joystickActive = false;
   moveKnob(0, 0);
-  player.dy = 0; // Stop vertical movement
+  player.inputDx = 0; // Stop horizontal movement
+  player.inputDy = 0; // Stop vertical movement
   e.preventDefault();
 }, { passive: false });
 
@@ -350,15 +409,6 @@ function gameLoop() {
     }
   });
 
-  // Handle player vertical input
-  // Only set dy based on key state if not boosting
-  if (!player.isBoosting) {
-    player.dy = 0; // Reset vertical movement each frame unless key is pressed
-    if (keys.up) player.dy = -player.verticalSpeed;
-    if (keys.down) player.dy = player.verticalSpeed;
-  }
-
-
   player.update();
   player.draw();
 
@@ -414,11 +464,12 @@ function initGame() {
   const nextLevelBtn = document.getElementById("nextLevelBtn");
   if (nextLevelBtn) nextLevelBtn.style.display = "none";
   pauseMenu.style.display = "none";
+  // The resume button was hidden by default, set it to block for consistency after pause
   if (document.getElementById("resumeButton")) document.getElementById("resumeButton").style.display = "block";
 
   // Reset coins
   coins.forEach(c => c.collected = false);
-  player.reset();
+  player.reset(); // This will handle player state reset
 
   if (assets.music) {
     assets.music.currentTime = 0;
