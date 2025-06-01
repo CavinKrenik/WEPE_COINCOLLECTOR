@@ -20,11 +20,20 @@ window.onload = function () {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
   ];
 
-  const playerImg = new Image(); playerImg.src = "character_sprite_sheet.png";
-  const bulletImg = new Image(); bulletImg.src = "bullet.png";
-  const enemyImg = new Image(); enemyImg.src = "enemy1.png";
-  const explosionImg = new Image(); explosionImg.src = "enemydamagefromgunshot.png";
-  const backgroundTiles = new Image(); backgroundTiles.src = "level4tiles.png";
+const playerImg = new Image();
+playerImg.src = "characterstep.png"; // old: "character_sprite_sheet.png"
+
+const bulletImg = new Image();
+bulletImg.src = "bullet.png";
+
+const enemyImg = new Image();
+enemyImg.src = "enemywalkright.png"; // old: "enemy1.png"
+
+const explosionImg = new Image();
+explosionImg.src = "bullethitenemy.png"; // old: "enemydamagefromgunshot.png"
+
+const backgroundTiles = new Image();
+backgroundTiles.src = "ground1tile.png"; // old: "level4tiles.png"
 
   const player = {
     x: 100, y: 400,
