@@ -1,4 +1,4 @@
-// level4_camera_scroll.js - Extended from original code with camera scrolling
+// level4_camera_scroll.js - Extended from original code with camera scrolling and corrected image sources
 
 window.onload = function () {
   const canvas = document.getElementById("gameCanvas");
@@ -20,20 +20,20 @@ window.onload = function () {
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
   ];
 
-const playerImg = new Image();
-playerImg.src = "characterstep.png"; // old: "character_sprite_sheet.png"
+  const playerImg = new Image();
+  playerImg.src = "characterstep.png";
 
-const bulletImg = new Image();
-bulletImg.src = "bullet.png";
+  const bulletImg = new Image();
+  bulletImg.src = "bullet.png";
 
-const enemyImg = new Image();
-enemyImg.src = "enemywalkright.png"; // old: "enemy1.png"
+  const enemyImg = new Image();
+  enemyImg.src = "enemywalkright.png";
 
-const explosionImg = new Image();
-explosionImg.src = "bullethitenemy.png"; // old: "enemydamagefromgunshot.png"
+  const explosionImg = new Image();
+  explosionImg.src = "bullethitenemy.png";
 
-const backgroundTiles = new Image();
-backgroundTiles.src = "ground1tile.png"; // old: "level4tiles.png"
+  const backgroundTiles = new Image();
+  backgroundTiles.src = "ground1tile.png";
 
   const player = {
     x: 100, y: 400,
@@ -47,7 +47,7 @@ backgroundTiles.src = "ground1tile.png"; // old: "level4tiles.png"
 
   const keys = {};
   window.addEventListener("keydown", e => keys[e.key] = true);
-  window.addEventListener("keyup", e => keys[e.key] = false);
+  window.addEventListener("keyup", e => delete keys[e.key]);
 
   let enemies = [
     { x: 800, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true },
