@@ -1,12 +1,16 @@
 window.onload = function () {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
   const bgMusic = document.getElementById("bgMusic");
-  bgMusic.volume = 0.3;
-  bgMusic.play();
+  if (bgMusic) {
+    bgMusic.volume = 0.3;
+    document.addEventListener("click", () => bgMusic.play());
+  }
 
-  // Assets
+  // Load assets
   const playerImg = new Image();
   playerImg.src = "character_sprite_sheet.png";
 
@@ -20,7 +24,33 @@ window.onload = function () {
   explosionImg.src = "enemydamagefromgunshot.png";
 
   const backgroundTiles = new Image();
-  backgroundTiles.src = "level4spritesheet.png";
+  backgroundTiles.src = "level4tiles.png";
+
+  const TILE_SIZE = 64;
+  const tileMap = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 2, 0, 2, 0, 2, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  ];
+
+  function tileIndexToCoords(index) {
+    const tilesPerRow = 3;
+    return {
+      sx: (index % tilesPerRow) * TILE_SIZE,
+      sy: Math.floor(index / tilesPerRow) * TILE_SIZE
+    };
+  }
+
+  function drawTileLayer(ctx, tilesetImg, map, tileSize) {
+    for (let row = 0; row < map.length; row++) {
+      for (let col = 0; col < map[row].length; col++) {
+        const tileIndex = map[row][col];
+        const { sx, sy } = tileIndexToCoords(tileIndex);
+        ctx.drawImage(tilesetImg, sx, sy, tileSize, tileSize, col * tileSize, row * tileSize, tileSize, tileSize);
+      }
+    }
+  }
 
   const player = {
     x: 100,
@@ -41,36 +71,20 @@ window.onload = function () {
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
-  let enemies = [
-    {
-      x: 800,
-      y: 400,
-      width: 64,
-      height: 64,
-      frame: 0,
-      frameTick: 0,
-      health: 5,
-      alive: true
-    }
-  ];
-
+  let enemies = [{ x: 800, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true }];
   let explosions = [];
 
   function createExplosion(x, y) {
     explosions.push({ x, y, frame: 0, maxFrames: 4, tick: 0 });
-
     const radius = 60;
     const dx = player.x + player.width / 2 - (x + 32);
     const dy = player.y + player.height / 2 - (y + 32);
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < radius) player.health -= 10;
-
+    if (Math.sqrt(dx * dx + dy * dy) < radius) player.health -= 10;
     enemies.forEach(e => {
       if (!e.alive) return;
       const ex = e.x + e.width / 2 - (x + 32);
       const ey = e.y + e.height / 2 - (y + 32);
-      const dist = Math.sqrt(ex * ex + ey * ey);
-      if (dist < radius) {
+      if (Math.sqrt(ex * ex + ey * ey) < radius) {
         e.health -= 2;
         if (e.health <= 0) {
           e.alive = false;
@@ -83,18 +97,13 @@ window.onload = function () {
   function drawExplosions() {
     explosions.forEach((e, i) => {
       ctx.drawImage(explosionImg, e.frame * 64, 0, 64, 64, e.x, e.y, 64, 64);
-      e.tick++;
-      if (e.tick % 5 === 0) e.frame++;
+      if (++e.tick % 5 === 0) e.frame++;
       if (e.frame >= e.maxFrames) explosions.splice(i, 1);
     });
   }
 
   function drawBackground() {
-    for (let y = 0; y < canvas.height; y += 64) {
-      for (let x = 0; x < canvas.width; x += 64) {
-        ctx.drawImage(backgroundTiles, 0, 0, 64, 64, x, y, 64, 64);
-      }
-    }
+    drawTileLayer(ctx, backgroundTiles, tileMap, TILE_SIZE);
   }
 
   function drawPlayer() {
@@ -111,7 +120,6 @@ window.onload = function () {
       if (e.alive) {
         ctx.drawImage(enemyImg, e.frame * 64, 0, 64, 64, e.x, e.y, e.width, e.height);
         if (++e.frameTick % 15 === 0) e.frame = (e.frame + 1) % 3;
-
         ctx.fillStyle = "red";
         ctx.fillRect(e.x, e.y - 10, 60, 5);
         ctx.fillStyle = "green";
@@ -127,7 +135,6 @@ window.onload = function () {
     ctx.fillRect(20, 20, player.health * 2, 20);
     ctx.strokeStyle = "white";
     ctx.strokeRect(20, 20, 200, 20);
-
     if (player.health <= 0) {
       ctx.fillStyle = "red";
       ctx.font = "48px Arial";
@@ -137,17 +144,13 @@ window.onload = function () {
 
   function update() {
     if (player.health <= 0) return;
-
     if (keys["ArrowRight"]) player.x += player.speed;
     if (keys["ArrowLeft"]) player.x -= player.speed;
     if (keys[" "] || keys["z"]) player.shoot();
-
     player.bullets.forEach(b => b.x += 10);
     player.bullets = player.bullets.filter(b => b.x < canvas.width);
-
     enemies.forEach(enemy => {
       if (!enemy.alive) return;
-
       const dx = player.x - enemy.x;
       const dy = player.y - enemy.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -155,23 +158,13 @@ window.onload = function () {
         enemy.x += (dx / dist) * 1.5;
         enemy.y += (dy / dist) * 1.5;
       }
-
-      if (
-        player.x < enemy.x + enemy.width &&
-        player.x + player.width > enemy.x &&
-        player.y < enemy.y + enemy.height &&
-        player.y + player.height > enemy.y
-      ) {
+      if (player.x < enemy.x + enemy.width && player.x + player.width > enemy.x &&
+          player.y < enemy.y + enemy.height && player.y + player.height > enemy.y) {
         player.health -= 0.5;
       }
-
       player.bullets.forEach((bullet, i) => {
-        if (
-          bullet.x < enemy.x + enemy.width &&
-          bullet.x + bullet.width > enemy.x &&
-          bullet.y < enemy.y + enemy.height &&
-          bullet.y + bullet.height > enemy.y
-        ) {
+        if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x &&
+            bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
           enemy.health--;
           player.bullets.splice(i, 1);
           if (enemy.health <= 0) {
@@ -181,9 +174,7 @@ window.onload = function () {
         }
       });
     });
-
-    if (player.health < 0) player.health = 0;
-    if (player.health > 100) player.health = 100;
+    player.health = Math.min(Math.max(player.health, 0), 100);
   }
 
   function draw() {
@@ -203,4 +194,4 @@ window.onload = function () {
   }
 
   gameLoop();
-}; // End of window.onload
+};
