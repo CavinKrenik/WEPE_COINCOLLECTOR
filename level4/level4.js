@@ -131,13 +131,7 @@ window.onload = function () {
         const bulletX = this.x + (this.direction === 'right' ? 50 : 0);
         const bulletDX = (this.direction === 'right' ? 10 : -10);
         this.bullets.push({ x: bulletX, y: this.y + 20, width: 16, height: 8, dx: bulletDX });
-        activeGunshotEffects.push({
-          x: this.x + (this.direction === 'right' ? this.width : -30),
-          y: this.y + 20,
-          frame: 0,
-          frameTick: 0,
-          direction: this.direction
-        });
+        createGunshotEffect(this.x + (this.direction === 'right' ? this.width : -30), this.y + 20, this.direction);
         if (this.shootTimer) clearTimeout(this.shootTimer);
         this.shootTimer = setTimeout(() => {
           this.isShooting = false;
@@ -208,6 +202,85 @@ window.onload = function () {
   const camera = { x: 0 };
   const worldWidth = tileMap[0].length * TILE_SIZE;
 
+  // NEW: Explosion functions
+  function createExplosion(x, y) {
+    explosions.push({
+      x: x,
+      y: y,
+      frame: 0,
+      frameTick: 0,
+      maxFrame: assets.explosionFrames.length,
+      animationSpeed: 5 // Adjust as needed
+    });
+  }
+
+  function updateExplosions() {
+    for (let i = explosions.length - 1; i >= 0; i--) {
+      const exp = explosions[i];
+      exp.frameTick++;
+      if (exp.frameTick >= exp.animationSpeed) {
+        exp.frame++;
+        exp.frameTick = 0;
+      }
+      if (exp.frame >= exp.maxFrame) {
+        explosions.splice(i, 1); // Remove explosion when animation finishes
+      }
+    }
+  }
+
+  // NEW: Gunshot effect functions
+  function createGunshotEffect(x, y, direction) {
+    activeGunshotEffects.push({
+      x: x,
+      y: y,
+      frame: 0,
+      frameTick: 0,
+      maxFrame: assets.gunshotEffectFrames.length,
+      animationSpeed: 2, // Faster for a flash
+      direction: direction
+    });
+  }
+
+  function updateGunshotEffects() {
+    for (let i = activeGunshotEffects.length - 1; i >= 0; i--) {
+      const effect = activeGunshotEffects[i];
+      effect.frameTick++;
+      if (effect.frameTick >= effect.animationSpeed) {
+        effect.frame++;
+        effect.frameTick = 0;
+      }
+      if (effect.frame >= effect.maxFrame) {
+        activeGunshotEffects.splice(i, 1);
+      }
+    }
+  }
+
+  // NEW: Player hit effect functions
+  function createPlayerHitEffect(x, y) {
+    activePlayerHitEffects.push({
+      x: x,
+      y: y,
+      frame: 0,
+      frameTick: 0,
+      maxFrame: 1, // Only one frame for playerHitEffect (single image)
+      animationSpeed: 1 // Display briefly
+    });
+  }
+
+  function updatePlayerHitEffects() {
+    for (let i = activePlayerHitEffects.length - 1; i >= 0; i--) {
+      const effect = activePlayerHitEffects[i];
+      effect.frameTick++;
+      if (effect.frameTick >= effect.animationSpeed) {
+        effect.frame++;
+        effect.frameTick = 0;
+      }
+      if (effect.frame >= effect.maxFrame) {
+        activePlayerHitEffects.splice(i, 1);
+      }
+    }
+  }
+
   // --- Drawing and Update Functions ---
   function drawTileLayer(ctx, map, tileSize, offsetX) {
     // Minimal: Draw ground tiles as brown rectangles, lava as red, floating as green
@@ -250,15 +323,28 @@ window.onload = function () {
   }
 
   function drawExplosions() {
-    // Stub: No-op for now
+    explosions.forEach(exp => {
+      if (assets.explosionFrames[exp.frame] && assets.explosionFrames[exp.frame].complete) {
+        ctx.drawImage(assets.explosionFrames[exp.frame], exp.x - camera.x, exp.y);
+      }
+    });
   }
 
   function drawGunshotEffects() {
-    // Stub: No-op for now
+    activeGunshotEffects.forEach(effect => {
+      if (assets.gunshotEffectFrames[effect.frame] && assets.gunshotEffectFrames[effect.frame].complete) {
+        let drawX = effect.x - camera.x;
+        ctx.drawImage(assets.gunshotEffectFrames[effect.frame], drawX, effect.y);
+      }
+    });
   }
 
   function drawPlayerHitEffects() {
-    // Stub: No-op for now
+    activePlayerHitEffects.forEach(effect => {
+      if (assets.playerHitEffect && assets.playerHitEffect.complete && effect.frame < effect.maxFrame) {
+        ctx.drawImage(assets.playerHitEffect, effect.x - camera.x, effect.y);
+      }
+    });
   }
 
   function drawUI() {
@@ -328,13 +414,7 @@ window.onload = function () {
           player.y < enemy.y + enemy.height && player.y + player.height > enemy.y) {
         if (player.health > 0) {
           player.health -= 0.5;
-          activePlayerHitEffects.push({
-            x: player.x + player.width / 2 - 32,
-            y: player.y + player.height / 2 - 32,
-            frame: 0,
-            frameTick: 0,
-            duration: 30
-          });
+          createPlayerHitEffect(player.x + player.width / 2 - 32, player.y + player.height / 2 - 32);
         }
       }
       player.bullets.forEach((bullet, i) => {
@@ -353,6 +433,11 @@ window.onload = function () {
 
     camera.x = Math.max(0, player.x - canvas.width / 2);
     camera.x = Math.min(camera.x, worldWidth - canvas.width);
+
+    // Update effects
+    updateExplosions();
+    updateGunshotEffects();
+    updatePlayerHitEffects();
   }
 
   function draw() {
