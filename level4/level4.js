@@ -8,13 +8,13 @@ window.onload = function () {
 
   const bgMusic = document.getElementById("bgMusic");
   if (bgMusic) {
-    bgMusic.volume = 0.3;
-    // Add an event listener to play music on the first user interaction.
-    // This bypasses browser autoplay restrictions.
-    document.body.addEventListener("click", function oncePlayMusic() {
+    function oncePlayMusic() {
       bgMusic.play().catch(e => console.error("Music autoplay failed:", e));
-      document.body.removeEventListener("click", oncePlayMusic); // Remove listener after first play
-    }, { once: true }); // Ensure the listener is only triggered once
+      document.body.removeEventListener("pointerdown", oncePlayMusic);
+      document.body.removeEventListener("touchstart", oncePlayMusic);
+    }
+    document.body.addEventListener("pointerdown", oncePlayMusic, { once: true });
+    document.body.addEventListener("touchstart", oncePlayMusic, { once: true });
   }
 
   const TILE_SIZE = 64;
@@ -143,6 +143,11 @@ window.onload = function () {
     direction: 'right', // Added 'direction' property
     isShooting: false,  // Added 'isShooting' property
     shootTimer: null,   // To manage shooting animation duration
+    dy: 0,
+    isJumping: false,
+    canDoubleJump: true,
+    gravity: 1.5,
+    jumpPower: -18,
     shoot() {
       // Only allow shooting if not already in shooting animation state
       if (!this.isShooting) {
@@ -165,6 +170,16 @@ window.onload = function () {
         this.shootTimer = setTimeout(() => {
           this.isShooting = false;
         }, 200); // Duration for shooting animation/pose
+      }
+    },
+    jump() {
+      if (!this.isJumping) {
+        this.dy = this.jumpPower;
+        this.isJumping = true;
+        this.canDoubleJump = true;
+      } else if (this.canDoubleJump) {
+        this.dy = this.jumpPower;
+        this.canDoubleJump = false;
       }
     }
   };
@@ -484,8 +499,51 @@ window.onload = function () {
   }
 
   function gameLoop() {
-    update();
-    draw();
+    if (!paused) {
+      update();
+      draw();
+    }
     requestAnimationFrame(gameLoop);
   }
+  gameLoop();
+
+  let paused = false;
+  const pauseMenu = document.getElementById("pauseMenu");
+  const resumeButton = document.getElementById("resumeButton");
+  const retryButton = document.getElementById("retryButton");
+  const mainMenuButton = document.getElementById("mainMenuButton");
+  const toggleMusicButton = document.getElementById("toggleMusicButton");
+
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      paused = !paused;
+      pauseMenu.style.display = paused ? "flex" : "none";
+    }
+  });
+
+  resumeButton.onclick = () => {
+    paused = false;
+    pauseMenu.style.display = "none";
+  };
+  retryButton.onclick = () => window.location.reload();
+  mainMenuButton.onclick = () => window.location.href = "../index.html";
+  toggleMusicButton.onclick = () => {
+    if (bgMusic.paused) {
+      bgMusic.play();
+    } else {
+      bgMusic.pause();
+    }
+  };
+
+  // Jumping controls
+  window.addEventListener("keydown", e => {
+    if ((e.key === " " || e.key === "ArrowUp") && !paused) {
+      player.jump();
+    }
+  });
+
+  document.getElementById("jumpBtn").addEventListener("touchstart", function(e) {
+    if (!paused) player.jump();
+    e.preventDefault();
+  });
 };
