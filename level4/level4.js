@@ -84,7 +84,8 @@ window.onload = function () {
     assetsLoadedCount++;
     if (assetsLoadedCount === totalAssets) {
       console.log("All Level 4 assets loaded. Starting game loop.");
-      gameLoop();
+      // gameLoop();  <-- REMOVE THIS LINE
+      startGame(); // Call startGame instead
     }
   }
 
@@ -454,6 +455,11 @@ window.onload = function () {
     drawUI();
   }
 
+  // --- Start Game Function ---
+  function startGame() {
+    gameLoop(); // Start the game loop
+  }
+
   // --- Game Loop ---
   function gameLoop() {
     if (!paused) {
@@ -462,4 +468,6 @@ window.onload = function () {
     }
     requestAnimationFrame(gameLoop);
   }
+
+  startGame(); // Start the game after everything is defined
 };
