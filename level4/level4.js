@@ -47,8 +47,6 @@ window.onload = function () {
     background2: new Image()
   };
 
-  // ... asset loading code unchanged ...
-
   const assetsToLoad = [
     { name: 'playerWalkRight0', src: "characterstep.png", targetArray: assets.playerWalkRight, index: 0 },
     { name: 'playerWalkRight1', src: "characterstep1.png", targetArray: assets.playerWalkRight, index: 1 },
@@ -210,7 +208,7 @@ window.onload = function () {
   const camera = { x: 0 };
   const worldWidth = tileMap[0].length * TILE_SIZE;
 
-  // --- Drawing and Update Functions (unchanged from your code) ---
+  // --- Drawing and Update Functions ---
   function drawTileLayer(ctx, map, tileSize, offsetX) {
     // Minimal: Draw ground tiles as brown rectangles, lava as red, floating as green
     for (let row = 0; row < map.length; row++) {
