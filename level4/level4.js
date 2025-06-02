@@ -63,7 +63,7 @@ window.onload = function () {
     { name: 'bulletImg', src: "bullet.png", targetObject: assets, targetProperty: 'bulletImg' },
     { name: 'explosionFrame0', src: "bullethitenemy.png", targetArray: assets.explosionFrames, index: 0 },
     { name: 'explosionFrame1', src: "bullethitenemy1.png", targetArray: assets.explosionFrames, index: 1 },
-    { name: 'explosionFrame2', src: "bullethitenemy2.png", targetArray: assets.explosionFrames, index: 2 },
+    // Removed: { name: 'explosionFrame2', src: "bullethitenemy2.png", targetArray: assets.explosionFrames, index: 2 },
     { name: 'gunshotFrame0', src: "gunshotanimation.png", targetArray: assets.gunshotEffectFrames, index: 0 },
     { name: 'gunshotFrame1', src: "gunshotanimation1.png", targetArray: assets.gunshotEffectFrames, index: 1 },
     { name: 'gunshotFrame2', src: "gunshotanimation2.png", targetArray: assets.gunshotEffectFrames, index: 2 },
@@ -264,7 +264,8 @@ window.onload = function () {
       y: y,
       frame: 0,
       frameTick: 0,
-      maxFrame: assets.explosionFrames.length,
+      // maxFrame is now 2 since bullethitenemy2.png is removed
+      maxFrame: assets.explosionFrames.length > 0 ? assets.explosionFrames.length : 1, // Ensure it doesn't try to animate non-existent frames
       animationSpeed: 5 // Adjust as needed
     });
   }
@@ -277,7 +278,8 @@ window.onload = function () {
         exp.frame++;
         exp.frameTick = 0;
       }
-      if (exp.frame >= exp.maxFrame) {
+      // Ensure exp.frame stays within bounds of available explosion frames
+      if (exp.frame >= assets.explosionFrames.length) {
         explosions.splice(i, 1); // Remove explosion when animation finishes
       }
     }
@@ -431,8 +433,8 @@ window.onload = function () {
 
   function drawExplosions() {
     explosions.forEach(exp => {
-      // Check if the image is loaded before drawing
-      if (assets.explosionFrames[exp.frame] && assets.explosionFrames[exp.frame].complete) {
+      // Ensure the frame index is valid for the existing explosionFrames array
+      if (exp.frame < assets.explosionFrames.length && assets.explosionFrames[exp.frame] && assets.explosionFrames[exp.frame].complete) {
         ctx.drawImage(assets.explosionFrames[exp.frame], exp.x - camera.x, exp.y);
       }
     });
