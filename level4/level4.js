@@ -440,43 +440,6 @@ window.onload = function () {
     updatePlayerHitEffects();
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw flashing background images
-    const backgrounds = [assets.background1, assets.background2];
-    backgroundFlashTimer++;
-    if (backgroundFlashTimer >= backgroundFlashInterval) {
-      currentBackgroundIndex = (currentBackgroundIndex + 1) % backgrounds.length;
-      backgroundFlashTimer = 0;
-    }
-    const currentBackground = backgrounds[currentBackgroundIndex];
-
-    if (currentBackground && currentBackground.complete) {
-      const bgImage = currentBackground;
-      const bgWidth = bgImage.naturalWidth;
-      const canvasHeight = canvas.height;
-      const parallaxFactor = 0.2;
-      let startX = (-camera.x * parallaxFactor) % bgWidth;
-      if (startX > 0) startX -= bgWidth;
-      for (let x = startX; x < canvas.width; x += bgWidth) {
-        ctx.drawImage(bgImage, x, 0, bgWidth, canvasHeight);
-      }
-    } else {
-      ctx.fillStyle = "#222";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    drawTileLayer(ctx, tileMap, TILE_SIZE, camera.x);
-    drawPlayer();
-    drawBullets();
-    drawEnemies();
-    drawExplosions();
-    drawGunshotEffects();
-    drawPlayerHitEffects();
-    drawUI();
-  }
-
   function gameLoop() {
     if (!paused) {
       update();
