@@ -211,9 +211,71 @@ window.onload = function () {
   const worldWidth = tileMap[0].length * TILE_SIZE;
 
   // --- Drawing and Update Functions (unchanged from your code) ---
-  // ... drawTileLayer, createExplosion, drawExplosions, drawPlayer, drawBullets, drawEnemies, drawGunshotEffects, drawPlayerHitEffects, drawUI ...
+  function drawTileLayer(ctx, map, tileSize, offsetX) {
+    // Minimal: Draw ground tiles as brown rectangles, lava as red, floating as green
+    for (let row = 0; row < map.length; row++) {
+      for (let col = 0; col < map[row].length; col++) {
+        const tile = map[row][col];
+        if (tile === 1) {
+          ctx.fillStyle = "#964B00";
+          ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
+        } else if (tile === 3) {
+          ctx.fillStyle = "#228B22";
+          ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
+        } else if (tile === 4) {
+          ctx.fillStyle = "red";
+          ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
+        }
+      }
+    }
+  }
 
-  // (Paste your existing drawTileLayer, createExplosion, drawExplosions, drawPlayer, drawBullets, drawEnemies, drawGunshotEffects, drawPlayerHitEffects, drawUI functions here)
+  function drawPlayer() {
+    ctx.fillStyle = "blue";
+    ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+  }
+
+  function drawBullets() {
+    player.bullets.forEach(b => {
+      ctx.fillStyle = "yellow";
+      ctx.fillRect(b.x - camera.x, b.y, b.width, b.height);
+    });
+  }
+
+  function drawEnemies() {
+    enemies.forEach(e => {
+      if (e.alive) {
+        ctx.fillStyle = "purple";
+        ctx.fillRect(e.x - camera.x, e.y, e.width, e.height);
+      }
+    });
+  }
+
+  function drawExplosions() {
+    // Stub: No-op for now
+  }
+
+  function drawGunshotEffects() {
+    // Stub: No-op for now
+  }
+
+  function drawPlayerHitEffects() {
+    // Stub: No-op for now
+  }
+
+  function drawUI() {
+    ctx.fillStyle = "black";
+    ctx.fillRect(20, 20, 200, 20);
+    ctx.fillStyle = "lime";
+    ctx.fillRect(20, 20, player.health * 2, 20);
+    ctx.strokeStyle = "white";
+    ctx.strokeRect(20, 20, 200, 20);
+    if (player.health <= 0) {
+      ctx.fillStyle = "red";
+      ctx.font = "48px Arial";
+      ctx.fillText("GAME OVER", canvas.width / 2 - 130, canvas.height / 2);
+    }
+  }
 
   function update() {
     if (player.health <= 0) return;
