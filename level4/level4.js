@@ -37,7 +37,7 @@ window.onload = function () {
     enemyAttackLeft: new Image(),
     bulletImg: new Image(),
     explosionFrames: [],
-    gunshotEffectFrames: [],
+    gunshotEffectFrames: [], // Will only have one image now
     playerHitEffect: new Image(),
     ground1Tile: new Image(),
     ground2Tile: new Image(),
@@ -65,9 +65,9 @@ window.onload = function () {
     { name: 'explosionFrame1', src: "bullethitenemy1.png", targetArray: assets.explosionFrames, index: 1 },
     // Removed: { name: 'explosionFrame2', src: "bullethitenemy2.png", targetArray: assets.explosionFrames, index: 2 },
     { name: 'gunshotFrame0', src: "gunshotanimation.png", targetArray: assets.gunshotEffectFrames, index: 0 },
-    { name: 'gunshotFrame1', src: "gunshotanimation1.png", targetArray: assets.gunshotEffectFrames, index: 1 },
-    { name: 'gunshotFrame2', src: "gunshotanimation2.png", targetArray: assets.gunshotEffectFrames, index: 2 },
-    { name: 'gunshotFrame3', src: "gunshotanimation3.png", targetArray: assets.gunshotEffectFrames, index: 3 },
+    // Removed: { name: 'gunshotFrame1', src: "gunshotanimation1.png", targetArray: assets.gunshotEffectFrames, index: 1 },
+    // Removed: { name: 'gunshotFrame2', src: "gunshotanimation2.png", targetArray: assets.gunshotEffectFrames, index: 2 },
+    // Removed: { name: 'gunshotFrame3', src: "gunshotanimation3.png", targetArray: assets.gunshotEffectFrames, index: 3 },
     { name: 'playerHitEffect', src: "enemyhitsplayer.png", targetObject: assets, targetProperty: 'playerHitEffect' },
     { name: 'ground1Tile', src: "ground1tile.png", targetObject: assets, targetProperty: 'ground1Tile' },
     { name: 'ground2Tile', src: "ground2tile.png", targetObject: assets, targetProperty: 'ground2Tile' },
@@ -292,7 +292,7 @@ window.onload = function () {
       y: y,
       frame: 0,
       frameTick: 0,
-      maxFrame: assets.gunshotEffectFrames.length,
+      maxFrame: 1, // Only one frame now as only 'gunshotanimation.png' is used
       animationSpeed: 2, // Faster for a flash
       direction: direction
     });
@@ -306,6 +306,7 @@ window.onload = function () {
         effect.frame++;
         effect.frameTick = 0;
       }
+      // Since maxFrame is 1, effect.frame will become 1, triggering removal
       if (effect.frame >= effect.maxFrame) {
         activeGunshotEffects.splice(i, 1);
       }
@@ -442,17 +443,18 @@ window.onload = function () {
 
   function drawGunshotEffects() {
     activeGunshotEffects.forEach(effect => {
-      if (assets.gunshotEffectFrames[effect.frame] && assets.gunshotEffectFrames[effect.frame].complete) {
+      // Use index 0 as it's the only frame now
+      if (assets.gunshotEffectFrames[0] && assets.gunshotEffectFrames[0].complete) {
         let drawX = effect.x - camera.x;
         // Flip gunshot effect if player is shooting left
         if (effect.direction === 'left') {
           ctx.save();
-          ctx.translate(drawX + assets.gunshotEffectFrames[effect.frame].width / 2, effect.y + assets.gunshotEffectFrames[effect.frame].height / 2);
+          ctx.translate(drawX + assets.gunshotEffectFrames[0].width / 2, effect.y + assets.gunshotEffectFrames[0].height / 2);
           ctx.scale(-1, 1);
-          ctx.drawImage(assets.gunshotEffectFrames[effect.frame], -assets.gunshotEffectFrames[effect.frame].width / 2, -assets.gunshotEffectFrames[effect.frame].height / 2);
+          ctx.drawImage(assets.gunshotEffectFrames[0], -assets.gunshotEffectFrames[0].width / 2, -assets.gunshotEffectFrames[0].height / 2);
           ctx.restore();
         } else {
-          ctx.drawImage(assets.gunshotEffectFrames[effect.frame], drawX, effect.y);
+          ctx.drawImage(assets.gunshotEffectFrames[0], drawX, effect.y);
         }
       }
     });
