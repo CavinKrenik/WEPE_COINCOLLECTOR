@@ -84,8 +84,7 @@ window.onload = function () {
     assetsLoadedCount++;
     if (assetsLoadedCount === totalAssets) {
       console.log("All Level 4 assets loaded. Starting game loop.");
-      // gameLoop();  <-- REMOVE THIS LINE
-      startGame(); // Call startGame instead
+      startGame();
     }
   }
 
@@ -172,6 +171,59 @@ window.onload = function () {
     e.preventDefault();
   });
 
+  document.getElementById("shootBtn").addEventListener("touchstart", function(e) {
+    if (!paused) player.shoot();
+    e.preventDefault();
+  });
+
+  // Joystick controls
+  const joystickArea = document.getElementById("joystickArea");
+  const joystickKnob = document.getElementById("joystickKnob");
+  let joystickActive = false;
+  let joystickStartX, joystickStartY;
+
+  joystickArea.addEventListener("touchstart", (e) => {
+    joystickActive = true;
+    const touch = e.touches[0];
+    joystickStartX = touch.clientX;
+    joystickStartY = touch.clientY;
+    joystickKnob.style.transition = 'none'; // Disable transition for immediate response
+    e.preventDefault();
+  });
+
+  joystickArea.addEventListener("touchmove", (e) => {
+    if (!joystickActive) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - joystickStartX;
+    const dy = touch.clientY - joystickStartY;
+
+    const maxDistance = 50; // Half of joystickBase width/height (100px)
+    const angle = Math.atan2(dy, dx);
+    const distance = Math.min(maxDistance, Math.sqrt(dx * dx + dy * dy));
+
+    const knobX = maxDistance + Math.cos(angle) * distance;
+    const knobY = maxDistance + Math.sin(angle) * distance;
+
+    joystickKnob.style.left = `${knobX - joystickKnob.offsetWidth / 2}px`;
+    joystickKnob.style.top = `${knobY - joystickKnob.offsetHeight / 2}px`;
+
+    // Map joystick position to player movement
+    keys["ArrowRight"] = knobX > maxDistance + 10;
+    keys["ArrowLeft"] = knobX < maxDistance - 10;
+    // You could also add jump based on Y or other actions
+    e.preventDefault();
+  });
+
+  joystickArea.addEventListener("touchend", () => {
+    joystickActive = false;
+    joystickKnob.style.transition = 'left 0.1s, top 0.1s'; // Re-enable transition
+    joystickKnob.style.left = '25px'; // Reset knob to center
+    joystickKnob.style.top = '25px';
+    keys["ArrowRight"] = false;
+    keys["ArrowLeft"] = false;
+  });
+
+
   // Pause menu buttons
   resumeButton.onclick = () => {
     paused = false;
@@ -189,8 +241,8 @@ window.onload = function () {
 
   // --- Game Objects ---
   let enemies = [
-    { x: 800, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null },
-    { x: 1300, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null }
+    { x: 800, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 },
+    { x: 1300, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 }
   ];
   let explosions = [];
   let activeGunshotEffects = [];
@@ -284,18 +336,28 @@ window.onload = function () {
 
   // --- Drawing Functions ---
   function drawTileLayer(ctx, map, tileSize, offsetX) {
-    // Minimal: Draw ground tiles as brown rectangles, lava as red, floating as green
     for (let row = 0; row < map.length; row++) {
       for (let col = 0; col < map[row].length; col++) {
         const tile = map[row][col];
-        if (tile === 1) {
-          ctx.fillStyle = "#964B00";
-          ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
-        } else if (tile === 3) {
-          ctx.fillStyle = "#228B22";
-          ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
-        } else if (tile === 4) {
-          ctx.fillStyle = "red";
+        let tileImage = null;
+        if (tile === 1 && assets.ground1Tile.complete) {
+          tileImage = assets.ground1Tile;
+        } else if (tile === 2 && assets.ground2Tile.complete) {
+          tileImage = assets.ground2Tile;
+        } else if (tile === 3 && assets.floatingGroundTile.complete) {
+          tileImage = assets.floatingGroundTile;
+        } else if (tile === 4 && assets.hotLavaTile.complete) {
+          tileImage = assets.hotLavaTile;
+        }
+
+        if (tileImage) {
+          ctx.drawImage(tileImage, col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
+        } else if (tile !== 0) { // Fallback for unhandled tiles or unloasded images
+          // Draw a colored rectangle if image is not loaded or not a valid tile type
+          if (tile === 1) ctx.fillStyle = "#964B00"; // Brown for ground1
+          else if (tile === 3) ctx.fillStyle = "#228B22"; // Green for floating ground
+          else if (tile === 4) ctx.fillStyle = "red"; // Red for hot lava
+          else ctx.fillStyle = "gray"; // Default for other unknown tiles
           ctx.fillRect(col * tileSize - offsetX, row * tileSize, tileSize, tileSize);
         }
       }
@@ -303,22 +365,64 @@ window.onload = function () {
   }
 
   function drawPlayer() {
-    ctx.fillStyle = "blue";
-    ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+    let playerImage;
+    const animationSpeed = 10; // Adjust for slower/faster animation
+    if (player.isShooting) {
+      playerImage = (player.direction === 'right' && assets.playerShootRight.complete) ? assets.playerShootRight :
+                    (player.direction === 'left' && assets.playerShootLeft.complete) ? assets.playerShootLeft : null;
+    } else {
+      player.frameTick++;
+      if (player.frameTick >= animationSpeed) {
+        player.frame = (player.frame + 1) % 2; // Assuming 2 walk frames
+        player.frameTick = 0;
+      }
+      playerImage = (player.direction === 'right' && assets.playerWalkRight[player.frame] && assets.playerWalkRight[player.frame].complete) ? assets.playerWalkRight[player.frame] :
+                    (player.direction === 'left' && assets.playerWalkLeft[player.frame] && assets.playerWalkLeft[player.frame].complete) ? assets.playerWalkLeft[player.frame] : null;
+    }
+
+    if (playerImage) {
+      ctx.drawImage(playerImage, player.x - camera.x, player.y, player.width, player.height);
+    } else {
+      ctx.fillStyle = "blue"; // Fallback if image not loaded
+      ctx.fillRect(player.x - camera.x, player.y, player.width, player.height);
+    }
   }
 
   function drawBullets() {
     player.bullets.forEach(b => {
-      ctx.fillStyle = "yellow";
-      ctx.fillRect(b.x - camera.x, b.y, b.width, b.height);
+      if (assets.bulletImg.complete) {
+        ctx.drawImage(assets.bulletImg, b.x - camera.x, b.y, b.width, b.height);
+      } else {
+        ctx.fillStyle = "yellow"; // Fallback if image not loaded
+        ctx.fillRect(b.x - camera.x, b.y, b.width, b.height);
+      }
     });
   }
 
   function drawEnemies() {
     enemies.forEach(e => {
       if (e.alive) {
-        ctx.fillStyle = "purple";
-        ctx.fillRect(e.x - camera.x, e.y, e.width, e.height);
+        let enemyImage;
+        e.frameTick++;
+        if (e.frameTick >= e.animationSpeed) {
+          e.frame = (e.frame + 1) % 2; // Assuming 2 walk frames
+          e.frameTick = 0;
+        }
+
+        if (e.isAttacking) {
+          enemyImage = (e.direction === 'right' && assets.enemyAttackRight.complete) ? assets.enemyAttackRight :
+                       (e.direction === 'left' && assets.enemyAttackLeft.complete) ? assets.enemyAttackLeft : null;
+        } else {
+          enemyImage = (e.direction === 'right' && assets.enemyWalkRight[e.frame] && assets.enemyWalkRight[e.frame].complete) ? assets.enemyWalkRight[e.frame] :
+                       (e.direction === 'left' && assets.enemyWalkLeft[e.frame] && assets.enemyWalkLeft[e.frame].complete) ? assets.enemyWalkLeft[e.frame] : null;
+        }
+
+        if (enemyImage) {
+          ctx.drawImage(enemyImage, e.x - camera.x, e.y, e.width, e.height);
+        } else {
+          ctx.fillStyle = "purple"; // Fallback if image not loaded
+          ctx.fillRect(e.x - camera.x, e.y, e.width, e.height);
+        }
       }
     });
   }
@@ -335,7 +439,16 @@ window.onload = function () {
     activeGunshotEffects.forEach(effect => {
       if (assets.gunshotEffectFrames[effect.frame] && assets.gunshotEffectFrames[effect.frame].complete) {
         let drawX = effect.x - camera.x;
-        ctx.drawImage(assets.gunshotEffectFrames[effect.frame], drawX, effect.y);
+        // Flip gunshot effect if player is shooting left
+        if (effect.direction === 'left') {
+          ctx.save();
+          ctx.translate(drawX + assets.gunshotEffectFrames[effect.frame].width / 2, effect.y + assets.gunshotEffectFrames[effect.frame].height / 2);
+          ctx.scale(-1, 1);
+          ctx.drawImage(assets.gunshotEffectFrames[effect.frame], -assets.gunshotEffectFrames[effect.frame].width / 2, -assets.gunshotEffectFrames[effect.frame].height / 2);
+          ctx.restore();
+        } else {
+          ctx.drawImage(assets.gunshotEffectFrames[effect.frame], drawX, effect.y);
+        }
       }
     });
   }
@@ -381,14 +494,15 @@ window.onload = function () {
     player.y += player.dy;
     player.dy += player.gravity;
 
-    // Simple ground collision (adjust for your ground/platform logic)
-    const groundY = canvas.height - TILE_SIZE;
-    if (player.y + player.height >= groundY) {
-      player.y = groundY - player.height;
+    // Basic collision detection with the ground (replace with proper tile collision later)
+    const floorY = canvas.height - TILE_SIZE; // Assuming the bottom row of tiles is the floor
+    if (player.y + player.height > floorY) {
+      player.y = floorY - player.height;
       player.dy = 0;
       player.isJumping = false;
       player.canDoubleJump = true;
     }
+
 
     // Bullets
     player.bullets.forEach(b => b.x += b.dx);
@@ -404,12 +518,13 @@ window.onload = function () {
       if (dx > 0) enemy.direction = 'right';
       else if (dx < 0) enemy.direction = 'left';
 
-      if (dist > 1) {
+      // Simple enemy movement towards player
+      if (dist > 1) { // Avoid division by zero
         enemy.x += (dx / dist) * 1.5;
         enemy.y += (dy / dist) * 1.5;
-        enemy.isAttacking = false;
+        enemy.isAttacking = false; // Stop attacking when moving
       } else {
-        enemy.isAttacking = true;
+        enemy.isAttacking = true; // Start attacking when very close
       }
 
       if (player.x < enemy.x + enemy.width && player.x + player.width > enemy.x &&
@@ -445,6 +560,21 @@ window.onload = function () {
   // --- Draw Function ---
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw background (parallax might be added here later)
+    if (assets.background1.complete && assets.background2.complete) {
+        // Simple alternating background for now, or you can implement parallax
+        const bgToDraw = (currentBackgroundIndex % 2 === 0) ? assets.background1 : assets.background2;
+        // Adjust backgroundFlashTimer to control how often it changes
+        backgroundFlashTimer++;
+        if (backgroundFlashTimer >= backgroundFlashInterval) {
+            currentBackgroundIndex++;
+            backgroundFlashTimer = 0;
+        }
+        ctx.drawImage(bgToDraw, 0, 0, canvas.width, canvas.height); // Draw full screen
+    }
+
+
     drawTileLayer(ctx, tileMap, TILE_SIZE, camera.x);
     drawExplosions();
     drawGunshotEffects();
