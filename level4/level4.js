@@ -202,7 +202,7 @@ window.onload = function () {
   const camera = { x: 0 };
   const worldWidth = tileMap[0].length * TILE_SIZE;
 
-  // NEW: Explosion functions
+  // --- Create and Update Functions ---
   function createExplosion(x, y) {
     explosions.push({
       x: x,
@@ -281,7 +281,7 @@ window.onload = function () {
     }
   }
 
-  // --- Drawing and Update Functions ---
+  // --- Drawing Functions ---
   function drawTileLayer(ctx, map, tileSize, offsetX) {
     // Minimal: Draw ground tiles as brown rectangles, lava as red, floating as green
     for (let row = 0; row < map.length; row++) {
@@ -361,6 +361,7 @@ window.onload = function () {
     }
   }
 
+  // --- Update Function ---
   function update() {
     if (player.health <= 0) return;
 
@@ -440,6 +441,20 @@ window.onload = function () {
     updatePlayerHitEffects();
   }
 
+  // --- Draw Function ---
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTileLayer(ctx, tileMap, TILE_SIZE, camera.x);
+    drawExplosions();
+    drawGunshotEffects();
+    drawPlayerHitEffects();
+    drawPlayer();
+    drawBullets();
+    drawEnemies();
+    drawUI();
+  }
+
+  // --- Game Loop ---
   function gameLoop() {
     if (!paused) {
       update();
