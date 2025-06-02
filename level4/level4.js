@@ -112,7 +112,7 @@ window.onload = function () {
   const toggleMusicButton = document.getElementById("toggleMusicButton");
 
   const player = {
-    x: 100, y: 400,
+    x: 100, y: 0, // Initial Y will be set in startGame based on ground
     width: 64, height: 64,
     speed: 4,
     frame: 0, frameTick: 0,
@@ -129,8 +129,9 @@ window.onload = function () {
       if (!this.isShooting) {
         this.isShooting = true;
         const bulletX = this.x + (this.direction === 'right' ? 50 : 0);
+        const bulletYOffset = this.y + (this.height / 2) - 4; // Center bullet vertically from player
         const bulletDX = (this.direction === 'right' ? 10 : -10);
-        this.bullets.push({ x: bulletX, y: this.y + 20, width: 16, height: 8, dx: bulletDX });
+        this.bullets.push({ x: bulletX, y: bulletYOffset, width: 16, height: 8, dx: bulletDX });
         createGunshotEffect(this.x + (this.direction === 'right' ? this.width : -30), this.y + 20, this.direction);
         if (this.shootTimer) clearTimeout(this.shootTimer);
         this.shootTimer = setTimeout(() => {
@@ -241,15 +242,16 @@ window.onload = function () {
 
   // --- Game Objects ---
   let enemies = [
-    { x: 800, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 },
-    { x: 1300, y: 400, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 }
+    { x: 800, y: 0, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 },
+    { x: 1300, y: 0, width: 64, height: 64, frame: 0, frameTick: 0, health: 5, alive: true, direction: 'left', isAttacking: false, attackTimer: null, animationSpeed: 10 }
   ];
   let explosions = [];
   let activeGunshotEffects = [];
   let activePlayerHitEffects = [];
 
   let backgroundFlashTimer = 0;
-  const backgroundFlashInterval = 10;
+  // Increased interval for more spaced out lightning flashes
+  const backgroundFlashInterval = 50;
   let currentBackgroundIndex = 0;
 
   const camera = { x: 0 };
@@ -429,6 +431,7 @@ window.onload = function () {
 
   function drawExplosions() {
     explosions.forEach(exp => {
+      // Check if the image is loaded before drawing
       if (assets.explosionFrames[exp.frame] && assets.explosionFrames[exp.frame].complete) {
         ctx.drawImage(assets.explosionFrames[exp.frame], exp.x - camera.x, exp.y);
       }
@@ -587,6 +590,12 @@ window.onload = function () {
 
   // --- Start Game Function ---
   function startGame() {
+    // Set initial player and enemy positions on the ground
+    player.y = canvas.height - TILE_SIZE - player.height;
+    enemies.forEach(enemy => {
+        enemy.y = canvas.height - TILE_SIZE - enemy.height;
+    });
+
     gameLoop(); // Start the game loop
   }
 
